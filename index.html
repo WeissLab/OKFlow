@@ -191,6 +191,16 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
 .awards.many { gap: 4px; max-width: 350px; }
 .awards.many .award { width: 30px; height: 30px; } .awards.many .award i { font-size: 0.9rem; } .awards.many .award small { display: none; }
 .awards.many .award.gold { width: 36px; height: 36px; } .awards.many .award.gold i { font-size: 1.15rem; }
+kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75em; padding: 0 0.4em; margin: 0 0.15em; border: 1px solid var(--line); border-bottom-width: 3px; border-radius: 6px; background: var(--surface); color: var(--ink); font: 700 0.82em var(--body); line-height: 1; vertical-align: 0.05em; }
+.mouseonly { display: none; }
+@media (hover: hover) and (pointer: fine) { .mouseonly { display: inline; } kbd.mouseonly { display: inline-grid; } .touchonly { display: none; } }
+.keys { text-align: center; line-height: 2.1; }
+.unlocked { margin: 0; font: 800 1.05rem var(--display); color: var(--unsure); letter-spacing: 0.02em; }
+.agree { margin: 0; font-size: 0.9rem; color: var(--muted); text-align: center; }
+.agree b { font-family: var(--display); font-size: 1.5rem; color: #3f6fd8; font-variant-numeric: tabular-nums; }
+.agree small { font-size: 0.72rem; }
+.teaser { font-weight: 700; color: var(--ink); }
+.mbox.unlock .countdown { width: min(30vw, 120px); } .mbox.unlock .countdown span { font-size: min(16vw, 4.2rem); }
 .awards { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 340px; }
 .award { width: 40px; height: 40px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; box-shadow: inset 0 0 0 3px rgb(255 255 255 / 0.35), 0 2px 6px rgb(0 0 0 / 0.25); animation: pile .35s ease-out both; }
 .award i { font-style: normal; font-size: 1.15rem; line-height: 1; }
@@ -210,7 +220,7 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
   <section class="welcome" id="welcome">
     <div class="brandrow"><p class="brand">OKFlow</p><button class="theme" id="themeBtn1" type="button">Dark mode</button></div>
     <h1>Is this cell image good enough to analyse?</h1>
-    <p class="muted">One cell at a time from an imaging flow cytometer: brightfield on the left, fluorescence (DNA damage foci) on the right. Base your answer on the brightfield; the fluorescence, when it's shown, is an extra guide. Swipe the card or tap the buttons. Pinch to zoom.</p>
+    <p class="muted">One cell at a time from an imaging flow cytometer: brightfield on the left, fluorescence (DNA damage foci) on the right. Base your answer on the brightfield; the fluorescence, when it's shown, is an extra guide. <span class="touchonly">Swipe anywhere on the screen. Pinch to zoom.</span><span class="mouseonly">On a computer, use the arrow keys: <kbd>→</kbd> keep, <kbd>←</kbd> toss, <kbd>↑</kbd> not sure.</span></p>
     <div class="rules">
       <span class="chip keep">Keep →</span><span>A single whole cell, sharp and in focus.</span>
       <span class="chip toss">← Toss</span><span>Blurry or streaked, cut off by the edge of the image, two cells, a bead or debris.</span>
@@ -219,7 +229,7 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     <form class="field" id="nameForm">
       <label for="who">How would you like to be acknowledged?</label>
       <input type="text" id="who" autocomplete="name" maxlength="60" placeholder="Leave blank to stay anonymous">
-      <button class="go" type="submit" id="start">Next: see examples</button>
+      <button class="go" type="submit" id="start"><span class="lbl">Next: see examples</span> <kbd class="mouseonly">Enter</kbd></button>
     </form>
     <p class="muted small">We save your answers, how long each one took and the name you give, to build a reference set of cell images for the <a href="https://weisslab.ca">Weiss Lab</a> at Polytechnique Montréal. That name appears on the leaderboard and in our thanks; with none, you're listed as Anonymous. Your place is kept on this device, so finish on the same phone or computer.</p>
     <p class="muted small">Started on another phone or computer? <button class="linkish" type="button" id="haveCodeBtn">Enter your code</button> · Labelled on the earlier OKCell page? <button class="linkish" type="button" id="importBtn">Import those answers</button><input type="file" id="importFile" accept=".json,application/json" hidden></p>
@@ -236,7 +246,7 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     <p class="muted">Some cards show the brightfield alone. Every cell comes back once, flipped or turned; just answer it again.</p>
     <p class="note"><strong>Cut off = toss, even when it's sharp.</strong> If any part of the cell runs off the edge of the image, whether a sliver or half of it, toss it. Dark blue areas are outside the camera's view: a cell that runs into one is cut off too.</p>
     <div class="scroll" id="examples"></div>
-    <button class="go" type="button" id="beginBtn">Start labelling</button>
+    <button class="go" type="button" id="beginBtn"><span class="lbl">Start labelling</span> <kbd class="mouseonly">Enter</kbd></button>
   </section>
 
   <section class="page" id="devicePage" hidden>
@@ -244,14 +254,14 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     <p class="muted">On the other phone or computer, open <strong>okflow.weisslab.ca</strong>, tap <em>Enter your code</em> under the name box and type this code. Your name and answers come with you and you carry on where you are; this device can keep going too.</p>
     <p class="code" id="codeOut">…</p>
     <p class="muted small" id="codeNote">Works once, for 15 minutes.</p>
-    <button class="go" type="button" id="deviceBack">Back</button>
+    <button class="go" type="button" id="deviceBack"><span class="lbl">Back</span> <kbd class="mouseonly">Enter</kbd></button>
   </section>
 
   <section class="page" id="boardPage" hidden>
     <h1>Leaderboard</h1>
     <p class="muted">Cells labelled so far.</p>
     <div class="scroll"><ol class="board" id="board"></ol></div>
-    <button class="go" type="button" id="boardBack">Back to labelling</button>
+    <button class="go" type="button" id="boardBack"><span class="lbl">Back to labelling</span> <kbd class="mouseonly">Enter</kbd></button>
   </section>
 
   <section class="labeller" id="labeller" hidden>
@@ -277,13 +287,13 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     </div>
     <p class="was" id="was"></p>
     <div class="actions">
-      <button class="big toss" id="tossBtn" type="button">← Toss</button>
-      <button class="big unsure" id="unsureBtn" type="button">↑ Not sure</button>
-      <button class="big keep" id="keepBtn" type="button">Keep →</button>
+      <button class="big toss" id="tossBtn" type="button"><kbd>←</kbd> Toss</button>
+      <button class="big unsure" id="unsureBtn" type="button"><kbd>↑</kbd> Not sure</button>
+      <button class="big keep" id="keepBtn" type="button">Keep <kbd>→</kbd></button>
     </div>
     <p class="swipehint"><span class="toss">← toss</span><span class="unsure">↑ not sure</span><span class="keep">keep →</span></p>
     <p class="status" id="status"></p>
-    <p class="muted small keys" style="text-align:center">Keys: → keep · ← toss · ↑ not sure · Backspace back · ↓ forward · + / − zoom</p>
+    <p class="muted small keys"><kbd>→</kbd> keep <kbd>←</kbd> toss <kbd>↑</kbd> not sure <kbd>Return</kbd> back <kbd>↓</kbd> forward <kbd>P</kbd> pause <kbd>I</kbd> instructions <kbd>+</kbd><kbd>−</kbd> zoom</p>
   </section>
 
   <section class="done" id="done" hidden>
@@ -294,21 +304,22 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
       <p class="big-n" id="consistPct">–</p>
       <p class="muted" id="consistText"></p>
       <p class="muted small" id="totalsText"></p>
+      <p class="agree" id="doneAgree"></p>
     </div>
-    <button class="go" type="button" id="bonusBtn" hidden>Bonus round</button>
+    <button class="go" type="button" id="bonusBtn" hidden><span class="lbl">Bonus round</span> <kbd class="mouseonly">B</kbd></button>
     <p class="muted small" id="bonusText" hidden>Each of those cells comes back twice more, flipped a way you haven't seen. It helps us tell which answer is right.</p>
     <button type="button" class="shareBtn">Share OKFlow</button>
     <p class="muted small shareAlt" hidden><a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fokflow.weisslab.ca%2F" target="_blank" rel="noopener">Share on Facebook</a> · <button class="linkish copyLink" type="button">Copy link</button></p>
-    <button type="button" id="doneBoard">See the leaderboard</button>
-    <button type="button" id="reviewBtn">← Back to the last cell</button>
+    <button type="button" id="doneBoard"><span class="lbl">See the leaderboard</span> <kbd class="mouseonly">L</kbd></button>
+    <button type="button" id="reviewBtn"><span class="lbl">Back to the last cell</span> <kbd class="mouseonly">Return</kbd></button>
   </section>
 
   <section class="done" id="paused" hidden>
     <h1>Paused</h1>
     <p class="muted" id="pausedText"></p>
-    <button class="go" type="button" id="resumeBtn">Resume</button>
-    <button type="button" id="pausedGuide">Instructions</button>
-    <button type="button" id="pausedBoard">See the leaderboard</button>
+    <button class="go" type="button" id="resumeBtn"><span class="lbl">Resume</span> <kbd class="mouseonly">Enter</kbd></button>
+    <button type="button" id="pausedGuide"><span class="lbl">Instructions</span> <kbd class="mouseonly">I</kbd></button>
+    <button type="button" id="pausedBoard"><span class="lbl">See the leaderboard</span> <kbd class="mouseonly">L</kbd></button>
     <button type="button" class="shareBtn">Share OKFlow</button>
     <p class="muted small shareAlt" hidden><a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fokflow.weisslab.ca%2F" target="_blank" rel="noopener">Share on Facebook</a> · <button class="linkish copyLink" type="button">Copy link</button></p>
   </section>
@@ -321,14 +332,16 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     <p class="big-n" id="mN">50</p>
     <h2 id="mTitle">You've got flow!</h2>
     <div class="awards" id="mAwards" aria-label="Your awards so far"></div>
+    <p class="unlocked" id="mUnlocked" hidden>📊 Stats unlocked!</p>
     <div class="consist" id="mConsist"></div>
+    <p class="agree" id="mAgree" hidden></p>
     <p class="muted" id="mText"></p>
     <div class="countdown" id="mCount" aria-live="polite">
       <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" class="track"/><circle cx="50" cy="50" r="44" class="ring" id="mRing"/></svg>
       <span id="mLeft">5</span>
     </div>
-    <button class="go" type="button" id="mGo" disabled>Keep going</button>
-    <button type="button" id="mPause">Pause for now</button>
+    <button class="go" type="button" id="mGo" disabled><span class="lbl">Keep going</span> <kbd class="mouseonly">any key</kbd></button>
+    <button type="button" id="mPause"><span class="lbl">Pause for now</span> <kbd class="mouseonly">P</kbd></button>
   </div>
 </div>
 
@@ -536,9 +549,10 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     $("consistPct").textContent = pairs.length ? `${Math.round(100 * same / pairs.length)}%` : "–";
     $("consistText").textContent = `You gave the same answer both times for ${same} of ${pairs.length} cells.`;
     $("totalsText").textContent = `Keep ${totals.keep} · Toss ${totals.toss} · Not sure ${totals.unsure}`;
+    drawAgree($("doneAgree"));
     const extra = inBonus ? [] : bonusCards();
     $("bonusBtn").hidden = $("bonusText").hidden = !extra.length;
-    $("bonusBtn").textContent = `Bonus round: ${extra.length / 2} cells you answered differently (${extra.length} cards)`;
+    $("bonusBtn").querySelector(".lbl").textContent = `Bonus round: ${extra.length / 2} cells you answered differently (${extra.length} cards)`;
   }
 
   // ---- bonus round: the cells someone answered differently on their two showings, twice more each ----
@@ -663,7 +677,7 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
   $("boardBtn").addEventListener("click", () => openBoard("labeller"));
   $("doneBoard").addEventListener("click", () => openBoard("done"));
   $("boardBack").addEventListener("click", () => screen(returnTo));
-  $("boardBack").textContent = "Back";
+  $("boardBack").querySelector(".lbl").textContent = "Back";
 
   // ---- milestone: every 50 cards, a 5-second break with cells flowing past ----
   let flowAnim = 0;
@@ -692,7 +706,17 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
       hist = hist.filter((h) => h.d < d).concat([{ d, pct: Math.round(100 * same / pairs.length) }]).slice(-40);
       local.set("consist", JSON.stringify(hist), true);
     }
-    drawConsist(hist, pairs.length);
+    // the stats themselves are a reward: shown at 100, 500, 1000 and 1500 cards (and at the end), teased in between
+    const UNLOCK = [100, 500, 1000, 1500], unlocked = UNLOCK.includes(d);
+    $("mUnlocked").hidden = $("mAgree").hidden = !unlocked;
+    document.querySelector(".mbox").classList.toggle("unlock", unlocked);
+    if (unlocked) { drawConsist(hist, pairs.length); drawAgree($("mAgree")); }
+    else {
+      const next = UNLOCK.find((u) => u > d), t = document.createElement("p");
+      t.className = "consist-head teaser";
+      t.textContent = next ? `🔒 Your stats unlock at ${next} cards` : "🔒 Your final stats are waiting at the end";
+      $("mConsist").replaceChildren(t);
+    }
     const rankText = () => {
       const rows = rankRows(), rank = rows.findIndex((r) => r.me) + 1;
       $("mText").textContent = (rank && rows.length > 1 ? `You're #${rank} of ${rows.length} on the leaderboard. ` : "") + "Take a breath.";
@@ -702,7 +726,7 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     try { navigator.vibrate?.([60, 40, 60]); } catch {}
     // a big countdown ring, then "Keep going" opens up
     const go = $("mGo"), BREAK = 5, ring = $("mRing");
-    go.disabled = true; go.textContent = "Keep going"; $("mCount").hidden = false;
+    go.disabled = true; $("mCount").hidden = false;
     let left = BREAK; $("mLeft").textContent = left;
     ring.style.transition = "none"; ring.style.strokeDashoffset = "0"; void ring.getBoundingClientRect();
     ring.style.transition = `stroke-dashoffset ${BREAK}s linear`; ring.style.strokeDashoffset = String(2 * Math.PI * 44);
@@ -721,6 +745,25 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     shownAt = performance.now();   // the break doesn't count toward the next card's time
   }
   $("mGo").addEventListener("click", closeMilestone);
+  // Agreement with others (setup.sql okflow_agreement): only the caller's own counts come back.
+  async function drawAgree(el) {
+    el.hidden = false; el.textContent = "Agreement with others: checking…";
+    if (!sb || !uid) { el.textContent = "Agreement with others: connect to the internet to see it."; return; }
+    const { data, error } = await rpc("okflow_agreement", { p_set: SET });
+    const r = Array.isArray(data) ? data[0] : null;
+    if (error || !r) { el.hidden = true; return; }
+    const cards = Number(r.cards), agree = Number(r.agree), others = Number(r.others);
+    if (cards < 30) {
+      el.textContent = others < 2 ? "Agreement with others: appears once more people have labelled these cells."
+                                  : `Agreement with others: appears once you share 30 cards with them (${cards} so far).`;
+      return;
+    }
+    el.replaceChildren();
+    const head = document.createElement("span"); head.className = "score-label"; head.textContent = "Agreement with others";
+    const b = document.createElement("b"); b.textContent = ` ${Math.round(100 * agree / cards)}%`;
+    const sm = document.createElement("small"); sm.textContent = `same as most other labellers on ${agree} of ${cards} cards (${others} others so far)`;
+    el.append(head, b, document.createElement("br"), sm);
+  }
   function drawConsist(hist, nPairs) {
     const box = $("mConsist"); box.replaceChildren();
     const head = document.createElement("p"); head.className = "consist-head";
@@ -746,12 +789,13 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     box.append(head, svg, cap);
   }
   // Pausing needs no saving step: every answer is already saved as it's given.
-  $("mPause").addEventListener("click", () => {
+  $("mPause").addEventListener("click", () => pauseNow());
+  function pauseNow() {
     closeMilestone(); screen("paused");
     $("pausedText").textContent = `Your ${nDone()} answers are saved` +
       (outbox.length ? ` on this device and will be sent once you're online` : "") +
       `. You can close this page; it opens where you left off on this device.`;
-  });
+  }
   $("resumeBtn").addEventListener("click", () => { screen("labeller"); show(pos); });
   $("pausedBoard").addEventListener("click", () => openBoard("paused"));
   function startFlow() {
@@ -847,14 +891,33 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
   $("backBtn").addEventListener("click", goBack);
   $("fwdBtn").addEventListener("click", goForward);
   $("reviewBtn").addEventListener("click", goBack);
-  $("guideBtn").addEventListener("click", () => { $("beginBtn").textContent = "Back to labelling"; screen("guide"); });
-  $("pausedGuide").addEventListener("click", () => { $("beginBtn").textContent = "Back to labelling"; screen("guide"); });
+  $("guideBtn").addEventListener("click", () => { $("beginBtn").querySelector(".lbl").textContent = "Back to labelling"; screen("guide"); });
+  $("pausedGuide").addEventListener("click", () => { $("beginBtn").querySelector(".lbl").textContent = "Back to labelling"; screen("guide"); });
   $("beginBtn").addEventListener("click", startLabelling);
+  // ---- keyboard: every screen runs from the keys shown on its buttons, so a computer never needs the mouse ----
+  const press = (id) => () => { const b = $(id); if (b && !b.hidden && !b.disabled) b.click(); };
+  const KEYS = {
+    welcome: { Enter: () => $("nameForm").requestSubmit() },
+    guide: { Enter: press("beginBtn") },
+    boardPage: { Enter: press("boardBack"), Escape: press("boardBack") },
+    devicePage: { Enter: press("deviceBack"), Escape: press("deviceBack") },
+    paused: { Enter: press("resumeBtn"), " ": press("resumeBtn"), i: press("pausedGuide"), l: press("pausedBoard") },
+    done: { b: press("bonusBtn"), l: press("doneBoard"), Enter: press("reviewBtn"), Backspace: press("reviewBtn") },
+    labeller: { ArrowRight: () => fly("keep"), ArrowLeft: () => fly("toss"), ArrowUp: () => fly("unsure"),
+                Enter: goBack, Backspace: goBack, ArrowDown: goForward, p: pauseNow, i: press("guideBtn"), l: press("boardBtn"),
+                "+": () => setZoom(zoom * 1.25), "=": () => setZoom(zoom * 1.25), "-": () => setZoom(zoom / 1.25), "0": () => setZoom(1) },
+  };
   document.addEventListener("keydown", (e) => {
-    if ($("labeller").hidden || e.target.tagName === "INPUT" || !$("milestone").hidden) return;
-    const k = { ArrowRight: () => fly("keep"), ArrowLeft: () => fly("toss"), ArrowUp: () => fly("unsure"),
-                Backspace: goBack, ArrowDown: goForward, "+": () => setZoom(zoom * 1.25), "=": () => setZoom(zoom * 1.25),
-                "-": () => setZoom(zoom / 1.25), "0": () => setZoom(1) }[e.key];
+    if (e.ctrlKey || e.metaKey || e.altKey || e.target.tagName === "INPUT") return;   // typing in a box is just typing
+    if (!$("milestone").hidden) {   // the break: P pauses; once the countdown is over, any other key keeps going
+      if (["Shift", "Control", "Alt", "Meta", "Tab", "CapsLock"].includes(e.key)) return;
+      e.preventDefault();
+      if (e.key.toLowerCase() === "p") press("mPause")(); else press("mGo")();
+      return;
+    }
+    const where = ["welcome", "guide", "boardPage", "devicePage", "paused", "done", "labeller"].find((id) => !$(id).hidden);
+    if (where !== "labeller" && e.target.tagName === "BUTTON" && (e.key === "Enter" || e.key === " ")) return;   // a focused button handles its own
+    const k = KEYS[where]?.[e.key.length === 1 ? e.key.toLowerCase() : e.key];
     if (k) { e.preventDefault(); k(); }
   });
 
