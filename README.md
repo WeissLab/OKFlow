@@ -18,6 +18,8 @@ Live at **https://okflow.weisslab.ca** (and https://weisslab.ca/okflow, which re
 | `sheets/` | The cell images, lossless PNG: `sheet_NN.png` holds cells 100·NN+1 to 100·NN+100, five per row, each 80 px brightfield + 2 px gap + 80 px fluorescence; `guide.png` holds the nine examples |
 | `setup.sql` | The Supabase tables, their rules, the leaderboard and the device codes. Safe to rerun after an update |
 | `CNAME` | The custom domain for GitHub Pages |
+| `logo/` | The logo as vector files and the scripts that draw it (`make_logo.py`, then `make_share.py` for the link preview `share.png`) |
+| `apple-touch-icon.png`, `icon-512.png` | The cell icon for phone home screens |
 
 Nothing here says which run, condition or time point a cell came from. The
 images and card order are made in the (private) analysis repository by
