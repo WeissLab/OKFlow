@@ -67,6 +67,13 @@ Free projects pause after a week without use; restore one from the Supabase dash
 
 ## Get the answers
 
+**Directly (analysis computer):** run `analyst_access.sql` once in the SQL Editor, with a
+password of your own in place of `CHOOSE-A-LONG-PASSWORD`. It makes a login that can only
+read the answers and device links. Keep its connection string on the analysis computer only
+(see `scripts/fetch_okflow.py` in the analysis repository), then `uv run python scripts/fetch_okflow.py`.
+
+**By hand:**
+
 Supabase → **Table Editor** → `okflow_answers` and `okflow_people` → **Export** →
 **Export to CSV** (each), then in the analysis repository:
 
