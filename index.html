@@ -162,11 +162,11 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
       <span class="chip unsure">↑ Not sure</span><span>You really can't decide.</span>
     </div>
     <form class="field" id="nameForm">
-      <label for="who">What should we know you as?</label>
-      <input type="text" id="who" autocomplete="name" maxlength="60" placeholder="Your name, for the leaderboard and our thanks" required>
+      <label for="who">How would you like to be acknowledged?</label>
+      <input type="text" id="who" autocomplete="name" maxlength="60" placeholder="Leave blank to stay anonymous">
       <button class="go" type="submit" id="start">Next: see examples</button>
     </form>
-    <p class="muted small">We save your name, your answers and how long each one took, to build a reference set of cell images for the <a href="https://weisslab.ca">Weiss Lab</a> at Polytechnique Montréal. Your name appears on the leaderboard and in our thanks. Your place is kept on this device, so finish on the same phone or computer.</p>
+    <p class="muted small">We save your answers, how long each one took and the name you give, to build a reference set of cell images for the <a href="https://weisslab.ca">Weiss Lab</a> at Polytechnique Montréal. That name appears on the leaderboard and in our thanks; with none, you're listed as Anonymous. Your place is kept on this device, so finish on the same phone or computer.</p>
     <p class="muted small">Started on another phone or computer? <button class="linkish" type="button" id="haveCodeBtn">Enter your code</button> · Labelled on the earlier OKCell page? <button class="linkish" type="button" id="importBtn">Import those answers</button><input type="file" id="importFile" accept=".json,application/json" hidden></p>
     <form class="codeform" id="codeForm" hidden>
       <input type="text" id="codeIn" maxlength="9" placeholder="ABCD-1234" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Code from your other device">
@@ -445,14 +445,14 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     if (!sb || !uid) return;
     try {
       const { data, error } = await sb.rpc("okflow_board", { p_set: SET });
-      if (!error && Array.isArray(data)) boardRows = data.map((r) => ({ name: r.name || "Someone", n: Number(r.cards) || 0, me: !!r.me }));
+      if (!error && Array.isArray(data)) boardRows = data.map((r) => ({ name: r.name || "Anonymous", n: Number(r.cards) || 0, me: !!r.me }));
     } catch {}
   }
   function rankRows() {
     const rows = boardRows.map((r) => ({ ...r }));
     let me = rows.find((r) => r.me);
     if (!me && nDone()) { me = { name, me: true }; rows.push(me); }
-    if (me) { me.n = nDone(); me.name = name || me.name; }   // this device is ahead of the server
+    if (me) { me.n = nDone(); me.name = name || "Anonymous"; }   // this device is ahead of the server
     return rows.sort((a, b) => b.n - a.n);
   }
   function drawBoard() {
@@ -657,8 +657,7 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
   // ---- start: name, then the examples, then labelling ----
   $("nameForm").addEventListener("submit", (e) => {
     e.preventDefault();
-    name = $("who").value.trim();
-    if (!name) return;
+    name = $("who").value.trim();   // blank: anonymous
     local.set("name", name);
     screen("guide");
   });
