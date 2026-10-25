@@ -84,6 +84,8 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
 /* guide and leaderboard */
 .page { display: flex; flex-direction: column; gap: 14px; min-height: 0; flex: 1; }
 .scroll { flex: 1; min-height: 0; overflow-y: auto; display: grid; align-content: start; gap: 10px; padding-bottom: 4px; }
+.stats { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.stats .big-n { font-family: var(--display); font-weight: 800; font-size: 4rem; line-height: 1; font-variant-numeric: tabular-nums; color: var(--keep); margin: 0; }
 .code { font-family: ui-monospace, "Cascadia Mono", Menlo, monospace; font-size: 2.4rem; font-weight: 700; letter-spacing: 0.08em; text-align: center; background: var(--surface); border: 2px dashed var(--line); border-radius: 14px; padding: 14px; }
 .codeform { display: flex; gap: 8px; }
 .codeform input { flex: 1; min-width: 0; font-family: ui-monospace, "Cascadia Mono", Menlo, monospace; text-transform: uppercase; letter-spacing: 0.06em; }
@@ -232,6 +234,12 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
   <section class="done" id="done" hidden>
     <h1>All done. Thank you!</h1>
     <p class="muted" id="doneText"></p>
+    <div class="stats">
+      <p class="score-label">Self-consistency</p>
+      <p class="big-n" id="consistPct">–</p>
+      <p class="muted" id="consistText"></p>
+      <p class="muted small" id="totalsText"></p>
+    </div>
     <button type="button" id="doneBoard">See the leaderboard</button>
     <button type="button" id="reviewBtn">← Back to the last cell</button>
   </section>
@@ -431,6 +439,13 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
   function finish() {
     render(); screen("done");
     $("doneText").textContent = `${name ? name + ", you" : "You"} answered all ${N} cards. Your answers are saved.`;
+    // Every cell was shown twice: how often did both showings get the same answer?
+    const byItem = {}, totals = { keep: 0, toss: 0, unsure: 0 };
+    for (const [k, a] of Object.entries(votes)) { (byItem[itemOf(k)] ||= []).push(a.v); totals[a.v]++; }
+    const pairs = Object.values(byItem).filter((v) => v.length === 2), same = pairs.filter(([a, b]) => a === b).length;
+    $("consistPct").textContent = pairs.length ? `${Math.round(100 * same / pairs.length)}%` : "–";
+    $("consistText").textContent = `You gave the same answer both times for ${same} of ${pairs.length} cells.`;
+    $("totalsText").textContent = `Keep ${totals.keep} · Toss ${totals.toss} · Not sure ${totals.unsure}`;
   }
   function startLabelling() {
     screen("labeller");
