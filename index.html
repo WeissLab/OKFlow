@@ -106,7 +106,9 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
 @keyframes bump { 50% { transform: scale(1.18); } }
 .stage { flex: 1; min-height: 0; display: grid; place-items: center; }
 .card { width: 100%; max-width: calc((100dvh - 300px) * 2.1); background: var(--scope); border-radius: 18px; padding: 10px 10px 8px; box-shadow: 0 10px 30px rgb(0 0 0 / 0.18); user-select: none; -webkit-user-select: none; touch-action: none; position: relative; will-change: transform; cursor: grab; }
-.card.single { max-width: min(100%, calc(100dvh - 330px)); }
+/* A brightfield-only card is half a two-panel card (plus its 10 px side padding), so a camera pixel
+   is the same size on screen either way: card width W = 2 panes + 4 px gap + 20 px padding. */
+.card.single { max-width: none; width: calc(min(100%, (100dvh - 300px) * 2.1) / 2 + 8px); }
 .card.single .panes, .card.single .legend { grid-template-columns: 1fr; }
 .card.single .pane + .pane, .card.single .legend span + span { display: none; }
 .card.fly { transition: transform .23s ease-in, opacity .23s ease-in; }
@@ -213,6 +215,13 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     <button type="button" id="doneBoard">See the leaderboard</button>
     <button type="button" id="reviewBtn">← Back to the last cell</button>
   </section>
+
+  <section class="done" id="paused" hidden>
+    <h1>Paused</h1>
+    <p class="muted" id="pausedText"></p>
+    <button class="go" type="button" id="resumeBtn">Resume</button>
+    <button type="button" id="pausedBoard">See the leaderboard</button>
+  </section>
 </div>
 
 <div class="milestone" id="milestone" hidden>
@@ -223,6 +232,7 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     <h2 id="mTitle">You've got flow!</h2>
     <p class="muted" id="mText"></p>
     <button class="go" type="button" id="mGo" disabled>Keep going</button>
+    <button type="button" id="mPause">Pause for now</button>
   </div>
 </div>
 
@@ -379,7 +389,7 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
   window.addEventListener("online", () => (wake ? wake() : flush()));
 
   // ---- screens, answering, moving ----
-  function screen(id) { for (const s of ["welcome", "guide", "boardPage", "labeller", "done"]) $(s).hidden = s !== id; }
+  function screen(id) { for (const s of ["welcome", "guide", "boardPage", "labeller", "done", "paused"]) $(s).hidden = s !== id; }
   function answer(v, ms) {
     const k = key(), old = votes[k], before = nDone();
     const prev = old ? [...(old.prev || []), { v: old.v, ms: old.ms, at: old.at }] : [];
@@ -456,14 +466,30 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     try { navigator.vibrate?.([60, 40, 60]); } catch {}
     const go = $("mGo"); go.disabled = true;
     let left = 10; go.textContent = `Keep going in ${left}`;
-    const tick = setInterval(() => {
+    clearInterval(tick);
+    tick = setInterval(() => {
       left -= 1;
       if (left <= 0) { clearInterval(tick); go.disabled = false; go.textContent = "Keep going"; go.focus(); }
       else go.textContent = `Keep going in ${left}`;
     }, 1000);
     startFlow();
   }
-  $("mGo").addEventListener("click", () => { $("milestone").hidden = true; cancelAnimationFrame(flowAnim); });
+  let tick = 0;
+  function closeMilestone() {
+    clearInterval(tick); cancelAnimationFrame(flowAnim);
+    $("milestone").hidden = true;
+    shownAt = performance.now();   // the break doesn't count toward the next card's time
+  }
+  $("mGo").addEventListener("click", closeMilestone);
+  // Pausing needs no saving step: every answer is already saved as it's given.
+  $("mPause").addEventListener("click", () => {
+    closeMilestone(); screen("paused");
+    $("pausedText").textContent = `Your ${nDone()} answers are saved` +
+      (outbox.length ? ` on this device and will be sent once you're online` : "") +
+      `. You can close this page; it opens where you left off on this device.`;
+  });
+  $("resumeBtn").addEventListener("click", () => { screen("labeller"); show(pos); });
+  $("pausedBoard").addEventListener("click", () => openBoard("paused"));
   function startFlow() {
     const cv = $("flow"), ctx = cv.getContext("2d");
     const dpr = window.devicePixelRatio || 1;
