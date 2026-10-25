@@ -195,7 +195,20 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
 kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75em; padding: 0 0.4em; margin: 0 0.15em; border: 1px solid var(--line); border-bottom-width: 3px; border-radius: 6px; background: var(--surface); color: var(--ink); font: 700 0.82em var(--body); line-height: 1; vertical-align: 0.05em; }
 .mouseonly { display: none; }
 @media (hover: hover) and (pointer: fine) { .mouseonly { display: inline; } kbd.mouseonly { display: inline-grid; } .touchonly { display: none; } }
-.keys { text-align: center; line-height: 2.1; }
+.keys { text-align: center; line-height: 2.1; font-size: 0.85rem; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 4px 10px; margin: 0; }
+.keys-title { font-weight: 700; color: var(--muted); margin-right: 4px; }
+.desktop-only { display: none; }
+@media (hover: hover) and (pointer: fine) { .desktop-only { display: flex; } }
+/* computers also show the buttons and the shortcuts bar, so the card leaves room for them */
+@media (hover: hover) and (pointer: fine) {
+  .card { max-width: calc((100dvh - 390px) * 2.1); }
+  .card.single { width: calc(min(100%, (100dvh - 390px) * 2.1) / 2 + 8px); }
+}
+.note.keynote { align-items: center; gap: 14px; background: color-mix(in srgb, #3f6fd8 10%, var(--surface)); border-color: color-mix(in srgb, #3f6fd8 40%, var(--line)); }
+.note.keynote p { margin: 0; }
+.keypad { display: grid; grid-template-columns: repeat(3, 2.3em); grid-template-rows: repeat(2, 2.3em); gap: 4px; flex: none; }
+.keypad kbd { width: 100%; height: 100%; margin: 0; font-size: 1.05em; }
+.keypad .k-up { grid-column: 2; grid-row: 1; color: var(--unsure); } .keypad .k-left { grid-column: 1; grid-row: 2; color: var(--toss); } .keypad .k-right { grid-column: 3; grid-row: 2; color: var(--keep); }
 .unlocked { margin: 0; font: 800 1.05rem var(--display); color: var(--unsure); letter-spacing: 0.02em; }
 .agree { margin: 0; font-size: 0.9rem; color: var(--muted); text-align: center; }
 .agree b { font-family: var(--display); font-size: 1.5rem; color: #3f6fd8; font-variant-numeric: tabular-nums; }
@@ -221,10 +234,10 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   <section class="welcome" id="welcome">
     <div class="brandrow"><p class="brand" aria-label="OKFlow"><span class="cell-o" aria-hidden="true"></span><span aria-hidden="true">KFlow</span></p><button class="theme" id="themeBtn1" type="button">Dark mode</button></div>
     <h1>Is this cell image good enough to analyse?</h1>
-    <p class="muted">One cell at a time from an imaging flow cytometer: brightfield on the left, fluorescence (DNA damage foci) on the right. Base your answer on the brightfield; the fluorescence, when it's shown, is an extra guide. <span class="touchonly">Swipe anywhere on the screen. Pinch to zoom.</span><span class="mouseonly">On a computer, use the arrow keys: <kbd>→</kbd> keep, <kbd>←</kbd> toss, <kbd>↑</kbd> not sure.</span></p>
+    <p class="muted">One cell at a time from an imaging flow cytometer: brightfield on the left, fluorescence (DNA damage foci) on the right. Base your answer on the brightfield; the fluorescence, when it's shown, is an extra guide. <span class="touchonly">Swipe anywhere on the screen. Pinch to zoom.</span><span class="mouseonly">On a computer, use the arrow keys: <kbd>→</kbd> keep, <kbd>←</kbd> reject, <kbd>↑</kbd> not sure.</span></p>
     <div class="rules">
       <span class="chip keep">Keep →</span><span>A single whole cell, sharp and in focus.</span>
-      <span class="chip toss">← Toss</span><span>Blurry or streaked, cut off by the edge of the image, two cells, a bead or debris.</span>
+      <span class="chip toss">← Reject</span><span>Blurry or streaked, cut off by the edge of the image, two cells, a bead or debris.</span>
       <span class="chip unsure">↑ Not sure</span><span>You really can't decide.</span>
     </div>
     <form class="field" id="nameForm">
@@ -244,8 +257,12 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   <section class="page" id="guide" hidden>
     <h1>Instructions</h1>
     <p class="note keepnote"><strong>Base your answer on the brightfield</strong> (the grey image on the left). When the fluorescence image is shown too, use it as an extra guide, for example to tell one cell from two, or a cell from a bead or debris. Fluorescence often looks soft even when the cell is sharp.</p>
+    <div class="note keynote desktop-only">
+      <div class="keypad" aria-hidden="true"><kbd class="k-up">↑</kbd><kbd class="k-left">←</kbd><kbd class="k-right">→</kbd></div>
+      <p><strong>On a computer, your arrow keys are shortcuts.</strong> <kbd>→</kbd> keep, <kbd>←</kbd> reject, <kbd>↑</kbd> not sure. <kbd>Return</kbd> goes back a card and <kbd>P</kbd> pauses: you never need the mouse.</p>
+    </div>
     <p class="muted">Some cards show the brightfield alone. Every cell comes back once, flipped or turned; just answer it again.</p>
-    <p class="note"><strong>Cut off = toss, even when it's sharp.</strong> If any part of the cell runs off the edge of the image, whether a sliver or half of it, toss it. Dark blue areas are outside the camera's view: a cell that runs into one is cut off too.</p>
+    <p class="note"><strong>Cut off = reject, even when it's sharp.</strong> If any part of the cell runs off the edge of the image, whether a sliver or half of it, reject it. Dark blue areas are outside the camera's view: a cell that runs into one is cut off too.</p>
     <div class="scroll" id="examples"></div>
     <button class="go" type="button" id="beginBtn"><span class="lbl">Start labelling</span> <kbd class="mouseonly">Enter</kbd></button>
   </section>
@@ -282,19 +299,19 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
         <span class="item" id="itemNo">#1</span>
         <button class="zoomed" id="zoomReset" type="button" hidden>1×</button>
         <span class="stamp keep" id="stampKeep">KEEP</span>
-        <span class="stamp toss" id="stampToss">TOSS</span>
+        <span class="stamp toss" id="stampToss">REJECT</span>
         <span class="stamp unsure" id="stampUnsure">NOT SURE</span>
       </div>
     </div>
     <p class="was" id="was"></p>
     <div class="actions">
-      <button class="big toss" id="tossBtn" type="button"><kbd>←</kbd> Toss</button>
+      <button class="big toss" id="tossBtn" type="button"><kbd>←</kbd> Reject</button>
       <button class="big unsure" id="unsureBtn" type="button"><kbd>↑</kbd> Not sure</button>
       <button class="big keep" id="keepBtn" type="button">Keep <kbd>→</kbd></button>
     </div>
-    <p class="swipehint"><span class="toss">← toss</span><span class="unsure">↑ not sure</span><span class="keep">keep →</span></p>
+    <p class="swipehint"><span class="toss">← reject</span><span class="unsure">↑ not sure</span><span class="keep">keep →</span></p>
     <p class="status" id="status"></p>
-    <p class="muted small keys"><kbd>→</kbd> keep <kbd>←</kbd> toss <kbd>↑</kbd> not sure <kbd>Return</kbd> back <kbd>↓</kbd> forward <kbd>P</kbd> pause <kbd>I</kbd> instructions <kbd>+</kbd><kbd>−</kbd> zoom</p>
+    <p class="keys"><span class="keys-title">⌨ Keyboard shortcuts</span> <kbd>→</kbd> keep <kbd>←</kbd> reject <kbd>↑</kbd> not sure <kbd>Return</kbd> back <kbd>↓</kbd> forward <kbd>P</kbd> pause <kbd>I</kbd> instructions <kbd>+</kbd><kbd>−</kbd> zoom</p>
   </section>
 
   <section class="done" id="done" hidden>
@@ -358,14 +375,14 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   const GUIDE = [
     ["Sharp", "keep"], ["Sharp, irregular shape", "keep"], ["Out of focus: soft and hazy", "toss"],
     ["Streaked by motion", "toss"], ["Badly smeared", "toss"], ["Cut off at the edge, even if sharp", "toss"],
-    ["Only a sliver cut off: still toss", "toss"], ["Part of the cell runs off the image", "toss"],
+    ["Only a sliver cut off: still reject", "toss"], ["Part of the cell runs off the image", "toss"],
     ["Two cells, or a clump", "toss"], ["Bead or dead cell", "toss"], ["Debris", "toss"],
   ];
   const CHEERS = ["You've got flow!", "Focus pocus!", "Cell yeah!", "Sharp eye!", "In the zone of focus",
     "Flow state reached", "Brightfield, bright mind", "Laser-focused", "Cell-ebration time!", "Pixel perfect",
     "Nucleus of the team", "Totally in focus", "Membrane-blowing!", "Cytometry champion", "Out of focus? Not you.",
     "Rolling with the flow"];
-  const WORD = { keep: "keep", toss: "toss", unsure: "not sure" };
+  const WORD = { keep: "keep", toss: "reject", unsure: "not sure" };   // answers are stored as keep / toss / unsure
   const AWARDS = ["🔬", "🧫", "🧬", "🧪", "🎯", "💡", "🔭", "🌟", "🚀", "🦠", "🧠", "🌊", "💎", "🎨", "🧲", "📸", "🎉",
     "🌈", "⚡", "🍀", "🔥", "🦉", "🐙", "🌋", "🛰️", "🎆", "🧭", "🪐", "🎻", "🦄"];
   const $ = (id) => document.getElementById(id);
@@ -440,7 +457,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     cardPanes(a, b, "sheets/guide.png", 2 * TILE + GAP, GUIDE.length * TILE, 0, k * TILE);
     if (NOTES[k]) a.parentElement.append(noteSvg(NOTES[k]));
     const p = document.createElement("p");
-    const chip = document.createElement("span"); chip.className = "chip " + v; chip.textContent = v === "keep" ? "Keep" : "Toss";
+    const chip = document.createElement("span"); chip.className = "chip " + v; chip.textContent = v === "keep" ? "Keep" : "Reject";
     const t = document.createElement("span"); t.textContent = caption;
     p.append(chip, t); ex.append(panes, p); return ex;
   }));
@@ -549,7 +566,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     const pairs = Object.values(baseAnswers()).filter((ks) => ks.length === 2), same = pairs.filter(([a, b]) => votes[a].v === votes[b].v).length;
     $("consistPct").textContent = pairs.length ? `${Math.round(100 * same / pairs.length)}%` : "–";
     $("consistText").textContent = `You gave the same answer both times for ${same} of ${pairs.length} cells.`;
-    $("totalsText").textContent = `Keep ${totals.keep} · Toss ${totals.toss} · Not sure ${totals.unsure}`;
+    $("totalsText").textContent = `Keep ${totals.keep} · Reject ${totals.toss} · Not sure ${totals.unsure}`;
     drawAgree($("doneAgree"));
     const extra = inBonus ? [] : bonusCards();
     $("bonusBtn").hidden = $("bonusText").hidden = !extra.length;

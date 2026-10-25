@@ -1,8 +1,8 @@
 # OKFlow
 
 A swipe page for sorting imaging flow cytometry cell images: right keeps a cell
-(sharp, whole, single), left tosses it (blurry, streaked, cut off, two cells, a
-bead or debris), up is "not sure". It builds a reference set of human labels
+(sharp, whole, single), left rejects it (blurry, streaked, cut off, two cells, a
+bead or debris; stored as `toss`), up is "not sure". It builds a reference set of human labels
 for the Weiss Lab's work on removing poor-quality images from imaging flow
 cytometry data.
 
