@@ -63,6 +63,12 @@ d.text((58, 400), "Swipe left on the blurry ones.", font=reg(30), fill=MUTED)
 d.text((58, 442), "No sign-up. Just good-looking cells.", font=reg(30), fill=MUTED)
 heart = "\u2665"
 d.text((58, 520), heart, font=sym(34), fill=TOSS)
-d.text((100, 522), "for the Weiss Lab, Polytechnique Montréal", font=reg(24), fill=MUTED)
+d.text((100, 522), "from the Weiss Lab, Polytechnique Montréal", font=reg(24), fill=MUTED)
+# the address, under the cards
+url, uf = "okflow.weisslab.ca", bold(34)
+uw = d.textlength(url, font=uf)
+ux, uy = 880 - uw / 2, 548
+d.rounded_rectangle((ux - 24, uy - 8, ux + uw + 24, uy + 50), 29, fill=(25, 33, 43), outline=KEEP, width=3)
+d.text((ux, uy - 2), url, font=uf, fill=INK)
 img.convert("RGB").save(ROOT / "share.png", optimize=True)
 print("saved")
