@@ -7,7 +7,7 @@
 --
 -- What the public web page can do, through the publishable (anon) key:
 --   * add answers, only under its own anonymous ID;
---   * read the leaderboard: names and card counts, nothing else;
+--   * read the leaderboard: card counts under scrambled handles, never names;
 --   * make a one-time code to continue on another device, and use one: the new
 --     device is then counted as the same person and gets that person's latest answers.
 -- It cannot read, change or delete any answer. Read everything from the
@@ -73,16 +73,18 @@ as $$
 $$;
 revoke all on function public.okflow_person(uuid) from public, anon, authenticated;
 
--- The leaderboard: per person, the latest name they typed and how many cards they answered.
--- "me" marks the caller's own row; no IDs leave the database.
-create or replace function public.okflow_board(p_set text)
-returns table (name text, cards bigint, me boolean)
+-- The leaderboard: per person, how many cards they answered, under a scrambled handle (never a
+-- name: the page shows "You" for the caller and an obviously fake name for everyone else).
+-- "me" marks the caller's own row. Dropped first because its columns changed (name -> handle).
+drop function if exists public.okflow_board(text);
+create function public.okflow_board(p_set text)
+returns table (handle text, cards bigint, me boolean)
 language sql
 stable
 security definer
 set search_path = ''
 as $$
-  select (array_agg(a.name order by a.answered_at desc, a.seq desc))[1],
+  select substr(md5('okflow:' || coalesce(p.person, a.labeller)::text), 1, 12),
          count(distinct a.card),
          bool_or(coalesce(p.person, a.labeller) = public.okflow_person((select auth.uid())))
   from public.okflow_answers a

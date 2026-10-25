@@ -249,7 +249,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       <input type="text" id="who" autocomplete="name" maxlength="60" placeholder="Leave blank to stay anonymous">
       <button class="go" type="submit" id="start"><span class="lbl">Next: see examples</span> <kbd class="mouseonly">Enter</kbd></button>
     </form>
-    <p class="muted small">We save your answers, how long each one took and the name you give, to build a reference set of cell images for the <a href="https://weisslab.ca">Weiss Lab</a> at Polytechnique Montréal. That name appears on the leaderboard and in our thanks; with none, you're listed as Anonymous. Your place is kept on this device, so finish on the same phone or computer.</p>
+    <p class="muted small">We save your answers, how long each one took and the name you give, to build a reference set of cell images for the <a href="https://weisslab.ca">Weiss Lab</a> at Polytechnique Montréal. We use it only in our thanks: the leaderboard shows you as “You” and everyone else under a made-up name. Your place is kept on this device, so finish on the same phone or computer.</p>
     <p class="muted small">Started on another phone or computer? <button class="linkish" type="button" id="haveCodeBtn">Enter your code</button> · Labelled on the earlier OKCell page? <button class="linkish" type="button" id="importBtn">Import those answers</button><input type="file" id="importFile" accept=".json,application/json" hidden></p>
     <form class="codeform" id="codeForm" hidden>
       <input type="text" id="codeIn" maxlength="9" placeholder="ABCD-1234" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Code from your other device">
@@ -630,18 +630,30 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   }
 
   // ---- leaderboard: everyone's count of answered cards (setup.sql okflow_board) ----
+  // Nobody's real name is shown or even sent: the database gives a scrambled handle per person,
+  // and each handle always gets the same obviously fake name; your own row just says "You".
+  // made-up names: a colour or a city, then an animal or an object ("Orange Iguana", "Tokyo Door")
+  const ADJ = ["Orange", "Teal", "Crimson", "Violet", "Amber", "Indigo", "Olive", "Coral", "Silver", "Golden", "Ruby", "Jade",
+    "Tokyo", "Paris", "Lima", "Oslo", "Cairo", "Montreal", "Nairobi", "Lisbon", "Seoul", "Quito", "Dublin", "Perth"];
+  const NOUN = ["Iguana", "Otter", "Falcon", "Panda", "Gecko", "Walrus", "Lynx", "Heron", "Koala", "Moose", "Octopus", "Badger",
+    "Door", "Kettle", "Lantern", "Teapot", "Compass", "Bicycle", "Anchor", "Umbrella", "Trumpet", "Ladder", "Mirror", "Piano"];
+  function fakeName(handle) {
+    let h = 2166136261;
+    for (const ch of handle) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+    return `${ADJ[h % ADJ.length]} ${NOUN[Math.floor(h / ADJ.length) % NOUN.length]}`;
+  }
   async function loadBoard() {
     if (!sb || !uid) return;
     try {
       const { data, error } = await sb.rpc("okflow_board", { p_set: SET });
-      if (!error && Array.isArray(data)) boardRows = data.map((r) => ({ name: r.name || "Anonymous", n: Number(r.cards) || 0, me: !!r.me }));
+      if (!error && Array.isArray(data)) boardRows = data.map((r, i) => ({ name: r.me ? "You" : fakeName(r.handle || String(i)), n: Number(r.cards) || 0, me: !!r.me }));
     } catch {}
   }
   function rankRows() {
     const rows = boardRows.map((r) => ({ ...r }));
     let me = rows.find((r) => r.me);
     if (!me && nDone()) { me = { name, me: true }; rows.push(me); }
-    if (me) { me.n = nDone(); me.name = name || "Anonymous"; }   // this device is ahead of the server
+    if (me) { me.n = nDone(); me.name = "You"; }   // this device is ahead of the server
     return rows.sort((a, b) => b.n - a.n);
   }
   function drawBoard() {
@@ -650,7 +662,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     if (!rows.length) { const li = document.createElement("li"); li.textContent = "No one yet. Be the first!"; ol.append(li); return; }
     for (const r of rows) {
       const li = document.createElement("li"); if (r.me) li.className = "me";
-      const who = document.createElement("span"); who.className = "who"; who.textContent = r.name + (r.me ? " (you)" : "");
+      const who = document.createElement("span"); who.className = "who"; who.textContent = r.name;
       const n = document.createElement("span"); n.className = "n"; n.textContent = r.n;
       li.append(who, n); ol.append(li);
     }
