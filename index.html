@@ -9,12 +9,12 @@ if (location.protocol === "http:" && !/^(localhost|127\.0\.0\.1)$/.test(location
 <meta name="description" content="Help the Weiss Lab sort sharp cell images from blurry ones, one swipe at a time.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://okflow.weisslab.ca/">
-<meta property="og:title" content="OKFlow: is this cell sharp enough?">
-<meta property="og:description" content="Help the Weiss Lab sort sharp cell images from blurry ones, one swipe at a time.">
-<meta property="og:image" content="https://okflow.weisslab.ca/preview.png">
+<meta property="og:title" content="OKFlow: swipe right on cells that are in focus">
+<meta property="og:description" content="Blurry? Cut off? Just a bead pretending to be a cell? Swipe left. Help the Weiss Lab find the sharp ones, one swipe at a time. No sign-up.">
+<meta property="og:image" content="https://okflow.weisslab.ca/share.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Cell images from an imaging flow cytometer, some sharp and some blurry">
+<meta property="og:image:alt" content="Dating-app style cell profiles: a sharp cell marked It's a match, blurry ones marked Nope">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#eef1f4" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#10151c" media="(prefers-color-scheme: dark)">
@@ -588,7 +588,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   });
 
   // ---- sharing: the device's own share menu where there is one, else Facebook or the link ----
-  const SHARE = { title: "OKFlow", text: "Help the Weiss Lab sort sharp cell images from blurry ones, one swipe at a time.", url: "https://okflow.weisslab.ca/" };
+  const SHARE = { title: "OKFlow", text: "Swipe right on cells that are in focus. Help the Weiss Lab find the sharp ones, one swipe at a time.", url: "https://okflow.weisslab.ca/" };
   for (const b of document.querySelectorAll(".shareBtn")) b.addEventListener("click", async () => {
     if (navigator.share) {
       try { await navigator.share(SHARE); return; } catch (e) { if (e && e.name === "AbortError") return; }
