@@ -20,6 +20,7 @@ Live at **https://okflow.weisslab.ca** (and https://weisslab.ca/okflow, which re
 | `CNAME` | The custom domain for GitHub Pages |
 | `logo/` | The logo as vector files and the scripts that draw it (`make_logo.py`, then `make_share.py` for the link preview `share.png`) |
 | `apple-touch-icon.png`, `icon-512.png` | The cell icon for phone home screens |
+| `flyer/` | PDFs to share: `okflow-card.pdf` (the link preview; the whole page links to the site) and `okflow-poster.pdf` (US Letter, with a QR code made locally that goes straight to https://okflow.weisslab.ca). Drawn by `logo/make_flyer.py` |
 
 Nothing here says which run, condition or time point a cell came from. The
 images and card order are made in the (private) analysis repository by
