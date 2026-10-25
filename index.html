@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>OKFlow</title>
+<script>/* answers need a secure page (crypto.randomUUID), so move plain http to https */
+if (location.protocol === "http:" && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) location.replace("https:" + location.href.slice(5));</script>
 <meta name="description" content="Help the Weiss Lab sort sharp cell images from blurry ones, one swipe at a time.">
 <meta name="theme-color" content="#eef1f4" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#10151c" media="(prefers-color-scheme: dark)">
