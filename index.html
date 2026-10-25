@@ -14,7 +14,7 @@ if (location.protocol === "http:" && !/^(localhost|127\.0\.0\.1)$/.test(location
 <meta property="og:image" content="https://okflow.weisslab.ca/share.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Dating-app style cell profiles: a sharp cell marked It's a match, blurry ones marked Nope">
+<meta property="og:image:alt" content="Dating-app style cell profiles: a sharp cell marked A keeper, blurry ones marked Reject">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#eef1f4" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#10151c" media="(prefers-color-scheme: dark)">
@@ -70,8 +70,9 @@ button { font: inherit; cursor: pointer; border-radius: 999px; border: 1px solid
 button:focus-visible, input:focus-visible { outline: 3px solid color-mix(in srgb, var(--keep) 60%, transparent); outline-offset: 2px; }
 button:disabled { opacity: 0.4; cursor: default; }
 .brandrow { display: flex; justify-content: space-between; align-items: center; margin-bottom: -8px; }
-.brand { font-family: var(--display); font-weight: 800; font-size: 1.1rem; letter-spacing: 0.02em; color: var(--toss); }
-.brand::after { content: ""; display: inline-block; width: 0.8em; height: 0.8em; margin-left: 0.3em; vertical-align: -0.05em; border-radius: 50%; border: 0.12em solid var(--keep); background: radial-gradient(circle at 42% 45%, var(--keep) 0 22%, transparent 24%); }
+.brand { font-family: var(--display); font-weight: 800; font-size: 1.35rem; letter-spacing: 0.02em; color: var(--toss); }
+/* the O of OKFlow is a cell: a ring in the letters' colour around a nucleus */
+.brand .cell-o { display: inline-block; width: 0.74em; height: 0.74em; margin-right: 0.04em; vertical-align: -0.02em; border-radius: 50%; border: 0.15em solid var(--toss); background: radial-gradient(circle at 40% 52%, var(--keep) 0 26%, transparent 28%); }
 .theme { padding: 4px 12px; font-size: 0.8rem; }
 .go { background: var(--ink); color: var(--bg); border-color: var(--ink); font-weight: 700; padding: 13px 18px; }
 .linkish { background: none; border: none; padding: 0; color: var(--muted); text-decoration: underline; font-size: 0.8rem; }
@@ -218,7 +219,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
 <body>
 <div class="app">
   <section class="welcome" id="welcome">
-    <div class="brandrow"><p class="brand">OKFlow</p><button class="theme" id="themeBtn1" type="button">Dark mode</button></div>
+    <div class="brandrow"><p class="brand" aria-label="OKFlow"><span class="cell-o" aria-hidden="true"></span><span aria-hidden="true">KFlow</span></p><button class="theme" id="themeBtn1" type="button">Dark mode</button></div>
     <h1>Is this cell image good enough to analyse?</h1>
     <p class="muted">One cell at a time from an imaging flow cytometer: brightfield on the left, fluorescence (DNA damage foci) on the right. Base your answer on the brightfield; the fluorescence, when it's shown, is an extra guide. <span class="touchonly">Swipe anywhere on the screen. Pinch to zoom.</span><span class="mouseonly">On a computer, use the arrow keys: <kbd>→</kbd> keep, <kbd>←</kbd> toss, <kbd>↑</kbd> not sure.</span></p>
     <div class="rules">
