@@ -16,7 +16,7 @@ Live at **https://okflow.weisslab.ca** (and https://weisslab.ca/okflow, which re
 | `config.js` | The Supabase project URL and publishable key |
 | `cards.json` | The label set's id and the card order. A card is the cell number, its flip (`h` left-right, `v` upside down, `hv` both) and `b` when it shows brightfield only |
 | `sheets/` | The cell images, lossless PNG: `sheet_NN.png` holds cells 100·NN+1 to 100·NN+100, five per row, each 80 px brightfield + 2 px gap + 80 px fluorescence; `guide.png` holds the nine examples |
-| `setup.sql` | The Supabase table, its rules and the leaderboard function |
+| `setup.sql` | The Supabase tables, their rules, the leaderboard and the device codes. Safe to rerun after an update |
 | `CNAME` | The custom domain for GitHub Pages |
 
 Nothing here says which run, condition or time point a cell came from. The
@@ -35,6 +35,12 @@ any unsent answers on that device, sending them when it's back online.
 Through the public key, the page can only add rows under its own anonymous id
 and read the leaderboard (names and counts). It can't read, change or delete
 answers.
+
+**Switching device:** "switch device" on the labelling screen shows a one-time
+code (15 minutes). Entering it under the name box on another device links that
+device to the same person (table `okflow_people`) and brings over the person's
+name and latest answers, so they continue where they were. Both devices then
+count as one person on the leaderboard and in the analysis.
 
 ## Set up (once)
 
@@ -59,10 +65,10 @@ Free projects pause after a week without use; restore one from the Supabase dash
 
 ## Get the answers
 
-Supabase → **Table Editor** → `okflow_answers` → **Export** → **Export to CSV**,
-then in the analysis repository:
+Supabase → **Table Editor** → `okflow_answers` and `okflow_people` → **Export** →
+**Export to CSV** (each), then in the analysis repository:
 
-    uv run python scripts/import_swipe_labels.py okflow_answers_rows.csv
+    uv run python scripts/import_swipe_labels.py okflow_answers_rows.csv --people okflow_people_rows.csv
 
 ## Change the cells
 

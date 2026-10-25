@@ -84,6 +84,9 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
 /* guide and leaderboard */
 .page { display: flex; flex-direction: column; gap: 14px; min-height: 0; flex: 1; }
 .scroll { flex: 1; min-height: 0; overflow-y: auto; display: grid; align-content: start; gap: 10px; padding-bottom: 4px; }
+.code { font-family: ui-monospace, "Cascadia Mono", Menlo, monospace; font-size: 2.4rem; font-weight: 700; letter-spacing: 0.08em; text-align: center; background: var(--surface); border: 2px dashed var(--line); border-radius: 14px; padding: 14px; }
+.codeform { display: flex; gap: 8px; }
+.codeform input { flex: 1; min-width: 0; font-family: ui-monospace, "Cascadia Mono", Menlo, monospace; text-transform: uppercase; letter-spacing: 0.06em; }
 .note { background: color-mix(in srgb, var(--toss) 10%, var(--surface)); border: 1px solid color-mix(in srgb, var(--toss) 40%, var(--line)); border-radius: 12px; padding: 10px 14px; font-size: 0.92rem; line-height: 1.35; }
 .ex { display: grid; grid-template-columns: 58% 1fr; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 8px; }
 .ex p { font-size: 0.92rem; line-height: 1.3; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
@@ -164,7 +167,11 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
       <button class="go" type="submit" id="start">Next: see examples</button>
     </form>
     <p class="muted small">We save your name, your answers and how long each one took, to build a reference set of cell images for the <a href="https://weisslab.ca">Weiss Lab</a> at Polytechnique Montréal. Your name appears on the leaderboard and in our thanks. Your place is kept on this device, so finish on the same phone or computer.</p>
-    <p class="muted small">Labelled on the earlier OKCell page? <button class="linkish" type="button" id="importBtn">Import those answers</button><input type="file" id="importFile" accept=".json,application/json" hidden></p>
+    <p class="muted small">Started on another phone or computer? <button class="linkish" type="button" id="haveCodeBtn">Enter your code</button> · Labelled on the earlier OKCell page? <button class="linkish" type="button" id="importBtn">Import those answers</button><input type="file" id="importFile" accept=".json,application/json" hidden></p>
+    <form class="codeform" id="codeForm" hidden>
+      <input type="text" id="codeIn" maxlength="9" placeholder="ABCD-1234" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Code from your other device">
+      <button type="submit" id="codeGo">Continue</button>
+    </form>
     <p class="status" id="welcomeStatus"></p>
   </section>
 
@@ -174,6 +181,14 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     <p class="note"><strong>Cut off = toss, even when it's sharp.</strong> If any part of the cell runs off the edge of the image, whether a sliver or half of it, toss it. Dark blue areas are outside the camera's view: a cell that runs into one is cut off too.</p>
     <div class="scroll" id="examples"></div>
     <button class="go" type="button" id="beginBtn">Start labelling</button>
+  </section>
+
+  <section class="page" id="devicePage" hidden>
+    <h1>Continue on another device</h1>
+    <p class="muted">On the other phone or computer, open <strong>okflow.weisslab.ca</strong>, tap <em>Enter your code</em> under the name box and type this code. Your name and answers come with you and you carry on where you are; this device can keep going too.</p>
+    <p class="code" id="codeOut">…</p>
+    <p class="muted small" id="codeNote">Works once, for 15 minutes.</p>
+    <button class="go" type="button" id="deviceBack">Back</button>
   </section>
 
   <section class="page" id="boardPage" hidden>
@@ -189,7 +204,7 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
       <div class="progress">
         <div class="score"><span class="score-label">Cellcount</span><span class="score-n" id="score">0</span></div>
         <div class="bar"><i id="barFill"></i></div>
-        <span class="count"><span id="count">of 1600</span> · <button class="linkish" id="guideBtn" type="button">examples</button> · <button class="linkish" id="boardBtn" type="button">leaderboard</button> · <button class="linkish" id="themeBtn2" type="button">dark</button></span>
+        <span class="count"><span id="count">of 1600</span> · <button class="linkish" id="guideBtn" type="button">examples</button> · <button class="linkish" id="boardBtn" type="button">leaderboard</button> · <button class="linkish" id="deviceBtn" type="button">switch device</button> · <button class="linkish" id="themeBtn2" type="button">dark</button></span>
       </div>
       <button class="nav" id="fwdBtn" type="button">Forward →</button>
     </div>
@@ -395,7 +410,7 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
   window.addEventListener("online", () => (wake ? wake() : flush()));
 
   // ---- screens, answering, moving ----
-  function screen(id) { for (const s of ["welcome", "guide", "boardPage", "labeller", "done", "paused"]) $(s).hidden = s !== id; }
+  function screen(id) { for (const s of ["welcome", "guide", "boardPage", "devicePage", "labeller", "done", "paused"]) $(s).hidden = s !== id; }
   function answer(v, ms) {
     const k = key(), old = votes[k], before = nDone();
     const prev = old ? [...(old.prev || []), { v: old.v, ms: old.ms, at: old.at }] : [];
@@ -453,6 +468,46 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
   }
   let returnTo = "labeller";
   function openBoard(from) { returnTo = from; drawBoard(); screen("boardPage"); loadBoard().then(() => { if (!$("boardPage").hidden) drawBoard(); }); }
+
+  // ---- switching device: a one-time code (setup.sql okflow_make_code / okflow_use_code) ----
+  // The new device keeps its own sign-in but is linked to the same person, so its answers count together.
+  const rpc = async (fn, args) => { try { return await sb.rpc(fn, args); } catch (e) { return { error: e }; } };
+  $("deviceBtn").addEventListener("click", async () => {
+    screen("devicePage");
+    $("codeOut").textContent = "…"; $("codeNote").textContent = "Works once, for 15 minutes.";
+    if (!sb || !uid) { $("codeOut").textContent = "Offline"; $("codeNote").textContent = "Connect to the internet to get a code."; return; }
+    flush();
+    for (let t = 0; outbox.length && t < 20; t++) await new Promise((r) => setTimeout(r, 250));   // send waiting answers first
+    const { data, error } = await rpc("okflow_make_code", { p_set: SET });
+    if (error || typeof data !== "string") { $("codeOut").textContent = "No code"; $("codeNote").textContent = "Couldn't make a code just now. Try again in a moment."; return; }
+    $("codeOut").textContent = data.slice(0, 4) + "-" + data.slice(4);
+    if (outbox.length) $("codeNote").textContent = `Works once, for 15 minutes. ${outbox.length} answers from this device haven't been sent yet, so they won't come with the code.`;
+  });
+  $("deviceBack").addEventListener("click", () => { screen("labeller"); show(pos); });
+  $("haveCodeBtn").addEventListener("click", () => { $("codeForm").hidden = false; $("codeIn").focus(); });
+  $("codeForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const say = (m) => { $("welcomeStatus").textContent = m; };
+    const code = $("codeIn").value.trim();
+    if (!/^[0-9a-f]{4}-?[0-9a-f]{4}$/i.test(code)) { say("A code is 8 letters and numbers, like ABCD-1234."); return; }
+    if (!SET || !sb || !uid) { say("Not connected yet. Check the internet connection and try again."); return; }
+    $("codeGo").disabled = true;
+    const { data, error } = await rpc("okflow_use_code", { p_code: code, p_set: SET });
+    $("codeGo").disabled = false;
+    if (error || !Array.isArray(data)) {
+      say(error?.code === "P0002" ? "That code didn't work. A code works once and for 15 minutes: make a new one on your other device."
+                                  : "Couldn't check the code just now. Try again in a moment.");
+      return;
+    }
+    for (const r of data) {
+      const at = new Date(r.answered_at).toISOString();
+      if (!votes[r.card] || votes[r.card].at < at) votes[r.card] = { v: r.answer, ms: r.decide_ms, at };
+    }
+    if (data[0]?.name) { name = data[0].name; $("who").value = name; }
+    queueSave(); loadBoard();
+    $("codeForm").hidden = true; $("codeIn").value = "";
+    say(`Welcome back${name ? ", " + name : ""}: your ${nDone()} answers are here. Tap Next to continue.`);
+  });
   $("boardBtn").addEventListener("click", () => openBoard("labeller"));
   $("doneBoard").addEventListener("click", () => openBoard("done"));
   $("boardBack").addEventListener("click", () => screen(returnTo));
