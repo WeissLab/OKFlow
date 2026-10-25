@@ -164,6 +164,7 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
       <button class="go" type="submit" id="start">Next: see examples</button>
     </form>
     <p class="muted small">We save your name, your answers and how long each one took, to build a reference set of cell images for the <a href="https://weisslab.ca">Weiss Lab</a> at Polytechnique Montréal. Your name appears on the leaderboard and in our thanks. Your place is kept on this device, so finish on the same phone or computer.</p>
+    <p class="muted small">Labelled on the earlier OKCell page? <button class="linkish" type="button" id="importBtn">Import those answers</button><input type="file" id="importFile" accept=".json,application/json" hidden></p>
     <p class="status" id="welcomeStatus"></p>
   </section>
 
@@ -615,6 +616,46 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     connect();
   }).catch(() => { $("welcomeStatus").textContent = "Couldn't load the cell list. Reload the page to try again."; });
   preload("sheets/guide.png");
+
+  // ---- one-time import of answers given on the earlier OKCell page (its saved labeller document, as JSON) ----
+  // Each earlier answer, revisions included, becomes a row as if given here, keeping its time and decision ms.
+  // Row ids come from the answer itself, so importing the same file twice stores nothing new.
+  async function uuidFrom(text) {
+    const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text))).slice(0, 16);
+    h[6] = (h[6] & 0x0f) | 0x50; h[8] = (h[8] & 0x3f) | 0x80;   // shaped like a version-5 UUID
+    const x = [...h].map((b) => b.toString(16).padStart(2, "0")).join("");
+    return `${x.slice(0, 8)}-${x.slice(8, 12)}-${x.slice(12, 16)}-${x.slice(16, 20)}-${x.slice(20)}`;
+  }
+  $("importBtn").addEventListener("click", () => $("importFile").click());
+  $("importFile").addEventListener("change", async (e) => {
+    const f = e.target.files[0]; e.target.value = "";
+    const say = (m) => { $("welcomeStatus").textContent = m; };
+    if (!f) return;
+    if (!SET) { say("The cell list hasn't loaded yet. Try again in a moment."); return; }
+    let doc;
+    try { doc = JSON.parse(await f.text()); doc = doc.data || doc; } catch { doc = null; }
+    if (!doc || doc.set !== SET || !doc.votes || typeof doc.votes !== "object") { say("That isn't an OKCell answers file for this set of cells."); return; }
+    name = ($("who").value.trim() || String(doc.name || "")).slice(0, 60); $("who").value = name;
+    const cards = new Set(DISPLAY), rows = [];
+    let n = 0;
+    for (const [k, a] of Object.entries(doc.votes)) {
+      if (!cards.has(k) || !a) continue;
+      const hist = [...(a.prev || []), a].filter((h) => WORD[h.v] && typeof h.at === "string").sort((p, q) => p.at.localeCompare(q.at));
+      if (!hist.length) continue;
+      const last = hist[hist.length - 1];
+      if (votes[k] && votes[k].at >= last.at) continue;   // this device already has a newer answer to this card
+      for (const h of hist) rows.push({ id: await uuidFrom(`${SET}|${k}|${h.at}|${h.v}`), set_id: SET, name, card: k, answer: h.v,
+        decide_ms: Number.isFinite(h.ms) ? Math.max(0, Math.round(h.ms)) : null, answered_at: h.at });
+      votes[k] = { v: last.v, ms: last.ms, at: last.at, ...(hist.length > 1 ? { prev: hist.slice(0, -1).map(({ v, ms, at }) => ({ v, ms, at })) } : {}) };
+      n++;
+    }
+    rows.sort((p, q) => p.answered_at.localeCompare(q.answered_at));
+    for (const r of rows) { r.seq = ++seq; outbox.push(r); }
+    local.set("outbox", JSON.stringify(outbox), true); local.set("seq", String(seq), true);
+    queueSave();
+    say(n ? `Imported ${n} answers${name ? " as " + name : ""}. Tap Next and you'll continue from where you left off.`
+          : "Those answers are already here. Tap Next to continue.");
+  });
 
   // ---- connect to Supabase (config.js) with an anonymous sign-in kept on this device ----
   let connectWait = 5000;
