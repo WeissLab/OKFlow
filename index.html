@@ -7,6 +7,15 @@
 <script>/* answers need a secure page (crypto.randomUUID), so move plain http to https */
 if (location.protocol === "http:" && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) location.replace("https:" + location.href.slice(5));</script>
 <meta name="description" content="Help the Weiss Lab sort sharp cell images from blurry ones, one swipe at a time.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://okflow.weisslab.ca/">
+<meta property="og:title" content="OKFlow: is this cell sharp enough?">
+<meta property="og:description" content="Help the Weiss Lab sort sharp cell images from blurry ones, one swipe at a time.">
+<meta property="og:image" content="https://okflow.weisslab.ca/preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Cell images from an imaging flow cytometer, some sharp and some blurry">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#eef1f4" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#10151c" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='%230e8a6a' stroke-width='4'/%3E%3Ccircle cx='14' cy='16' r='5' fill='%230e8a6a'/%3E%3C/svg%3E">
@@ -89,7 +98,10 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
 .code { font-family: ui-monospace, "Cascadia Mono", Menlo, monospace; font-size: 2.4rem; font-weight: 700; letter-spacing: 0.08em; text-align: center; background: var(--surface); border: 2px dashed var(--line); border-radius: 14px; padding: 14px; }
 .codeform { display: flex; gap: 8px; }
 .codeform input { flex: 1; min-width: 0; font-family: ui-monospace, "Cascadia Mono", Menlo, monospace; text-transform: uppercase; letter-spacing: 0.06em; }
+.note.keepnote { background: color-mix(in srgb, var(--keep) 10%, var(--surface)); border-color: color-mix(in srgb, var(--keep) 40%, var(--line)); }
 .note { background: color-mix(in srgb, var(--toss) 10%, var(--surface)); border: 1px solid color-mix(in srgb, var(--toss) 40%, var(--line)); border-radius: 12px; padding: 10px 14px; font-size: 0.92rem; line-height: 1.35; }
+.notes { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.notetext { font: 700 10px var(--body); fill: #ffd84d; stroke: #000; stroke-width: 2.2px; paint-order: stroke; }
 .ex { display: grid; grid-template-columns: 58% 1fr; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 8px; }
 .ex p { font-size: 0.92rem; line-height: 1.3; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
 .board { display: grid; gap: 6px; list-style: none; margin: 0; padding: 0; counter-reset: rank; }
@@ -100,7 +112,7 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
 .board .who { min-width: 0; overflow-wrap: anywhere; }
 
 /* labelling */
-.labeller { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
+.labeller { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; touch-action: none; user-select: none; -webkit-user-select: none; }
 .top { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
 .nav { padding: 6px 12px; font-size: 0.9rem; }
 .progress { display: flex; flex-direction: column; gap: 4px; }
@@ -140,6 +152,10 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
 .status { font-size: 0.8rem; color: var(--muted); text-align: center; min-height: 1.2em; }
 .status.warn { color: var(--toss); }
 .keys { display: none; }
+/* On touch screens the whole area swipes, so the three buttons give way to a reminder of the directions. */
+.swipehint { display: none; justify-content: space-between; font-weight: 700; font-size: 0.9rem; padding-inline: 4px; }
+.swipehint .toss { color: var(--toss); } .swipehint .unsure { color: var(--unsure); } .swipehint .keep { color: var(--keep); }
+@media (pointer: coarse) { .actions { display: none; } .swipehint { display: flex; } }
 @media (hover: hover) and (pointer: fine) { .keys { display: block; } }
 .done { margin-block: auto; display: flex; flex-direction: column; gap: 14px; text-align: center; }
 
@@ -148,6 +164,13 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
 .milestone canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .mbox { position: relative; display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center; max-width: 420px; }
 .mbox h2 { font-family: var(--display); font-weight: 800; font-size: 2.4rem; line-height: 1.05; margin: 0; color: var(--keep); text-wrap: balance; }
+.awards { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 340px; }
+.award { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font: 800 0.72rem var(--display); color: #fff; box-shadow: inset 0 0 0 3px rgb(255 255 255 / 0.35), 0 2px 6px rgb(0 0 0 / 0.25); animation: pile .35s ease-out both; }
+.award.gold { width: 44px; height: 44px; background: linear-gradient(135deg, #f6d36b, #c99400); color: #3d2c00; }
+.award.new { animation: pop .7s cubic-bezier(.3, 1.7, .5, 1) both; }
+@keyframes pile { from { transform: translateY(-14px); opacity: 0; } }
+@keyframes pop { from { transform: scale(0) rotate(-40deg); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .award, .award.new { animation: none; } }
 .mbox .big-n { font-family: var(--display); font-weight: 800; font-size: 4rem; line-height: 1; font-variant-numeric: tabular-nums; }
 @media (prefers-reduced-motion: reduce) { .card.fly, .card.settle, .bar > i { transition: none; } .score-n.bump { animation: none; } }
 </style>
@@ -157,7 +180,7 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
   <section class="welcome" id="welcome">
     <div class="brandrow"><p class="brand">OKFlow</p><button class="theme" id="themeBtn1" type="button">Dark mode</button></div>
     <h1>Is this cell image good enough to analyse?</h1>
-    <p class="muted">One cell at a time from an imaging flow cytometer: brightfield on the left, fluorescence (DNA damage foci) on the right. Swipe the card or tap the buttons. Pinch to zoom.</p>
+    <p class="muted">One cell at a time from an imaging flow cytometer: brightfield on the left, fluorescence (DNA damage foci) on the right. Base your answer on the brightfield; the fluorescence, when it's shown, is an extra guide. Swipe the card or tap the buttons. Pinch to zoom.</p>
     <div class="rules">
       <span class="chip keep">Keep →</span><span>A single whole cell, sharp and in focus.</span>
       <span class="chip toss">← Toss</span><span>Blurry or streaked, cut off by the edge of the image, two cells, a bead or debris.</span>
@@ -178,8 +201,9 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
   </section>
 
   <section class="page" id="guide" hidden>
-    <h1>What you'll see</h1>
-    <p class="muted">Judge the whole image. Some cards show the brightfield alone; judge those from the brightfield. Every cell comes back once, flipped or turned; just answer it again.</p>
+    <h1>Instructions</h1>
+    <p class="note keepnote"><strong>Base your answer on the brightfield</strong> (the grey image on the left). When the fluorescence image is shown too, use it as an extra guide, for example to tell one cell from two, or a cell from a bead or debris. Fluorescence often looks soft even when the cell is sharp.</p>
+    <p class="muted">Some cards show the brightfield alone. Every cell comes back once, flipped or turned; just answer it again.</p>
     <p class="note"><strong>Cut off = toss, even when it's sharp.</strong> If any part of the cell runs off the edge of the image, whether a sliver or half of it, toss it. Dark blue areas are outside the camera's view: a cell that runs into one is cut off too.</p>
     <div class="scroll" id="examples"></div>
     <button class="go" type="button" id="beginBtn">Start labelling</button>
@@ -206,7 +230,7 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
       <div class="progress">
         <div class="score"><span class="score-label">Cellcount</span><span class="score-n" id="score">0</span></div>
         <div class="bar"><i id="barFill"></i></div>
-        <span class="count"><span id="count">of 1600</span> · <button class="linkish" id="guideBtn" type="button">examples</button> · <button class="linkish" id="boardBtn" type="button">leaderboard</button> · <button class="linkish" id="deviceBtn" type="button">switch device</button> · <button class="linkish" id="themeBtn2" type="button">dark</button></span>
+        <span class="count"><button class="linkish" id="guideBtn" type="button">instructions</button> · <button class="linkish" id="boardBtn" type="button">leaderboard</button> · <button class="linkish" id="deviceBtn" type="button">switch device</button> · <button class="linkish" id="themeBtn2" type="button">dark</button></span>
       </div>
       <button class="nav" id="fwdBtn" type="button">Forward →</button>
     </div>
@@ -227,6 +251,7 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
       <button class="big unsure" id="unsureBtn" type="button">↑ Not sure</button>
       <button class="big keep" id="keepBtn" type="button">Keep →</button>
     </div>
+    <p class="swipehint"><span class="toss">← toss</span><span class="unsure">↑ not sure</span><span class="keep">keep →</span></p>
     <p class="status" id="status"></p>
     <p class="muted small keys" style="text-align:center">Keys: → keep · ← toss · ↑ not sure · Backspace back · ↓ forward · + / − zoom</p>
   </section>
@@ -240,6 +265,10 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
       <p class="muted" id="consistText"></p>
       <p class="muted small" id="totalsText"></p>
     </div>
+    <button class="go" type="button" id="bonusBtn" hidden>Bonus round</button>
+    <p class="muted small" id="bonusText" hidden>Each of those cells comes back twice more, flipped a way you haven't seen. It helps us tell which answer is right.</p>
+    <button type="button" class="shareBtn">Share OKFlow</button>
+    <p class="muted small shareAlt" hidden><a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fokflow.weisslab.ca%2F" target="_blank" rel="noopener">Share on Facebook</a> · <button class="linkish copyLink" type="button">Copy link</button></p>
     <button type="button" id="doneBoard">See the leaderboard</button>
     <button type="button" id="reviewBtn">← Back to the last cell</button>
   </section>
@@ -248,7 +277,10 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     <h1>Paused</h1>
     <p class="muted" id="pausedText"></p>
     <button class="go" type="button" id="resumeBtn">Resume</button>
+    <button type="button" id="pausedGuide">Instructions</button>
     <button type="button" id="pausedBoard">See the leaderboard</button>
+    <button type="button" class="shareBtn">Share OKFlow</button>
+    <p class="muted small shareAlt" hidden><a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fokflow.weisslab.ca%2F" target="_blank" rel="noopener">Share on Facebook</a> · <button class="linkish copyLink" type="button">Copy link</button></p>
   </section>
 </div>
 
@@ -258,6 +290,7 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     <p class="score-label">Cellcount</p>
     <p class="big-n" id="mN">50</p>
     <h2 id="mTitle">You've got flow!</h2>
+    <div class="awards" id="mAwards" aria-label="Your awards so far"></div>
     <p class="muted" id="mText"></p>
     <button class="go" type="button" id="mGo" disabled>Keep going</button>
     <button type="button" id="mPause">Pause for now</button>
@@ -310,7 +343,8 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
   // "hv" both), then "b" when the card shows brightfield only: "404", "404vb", "37hvb", "37h".
   let votes = {}, outbox = [], seq = 0;   // read from this device once cards.json gives the set
   let name = local.get("name") || "";
-  let DISPLAY = [], N = 0;
+  let BASE = [], DISPLAY = [], N = 0;   // BASE: the set's cards (two showings per cell); DISPLAY adds any bonus round
+  const ORIENTS = ["", "h", "v", "hv"];
   let pos = 0, shownAt = performance.now(), zoom = 1;
   let sb = null, uid = null, refused = false, boardRows = [];
   const readJSON = (k, fallback) => { try { return JSON.parse(local.get(k, true) || "null") ?? fallback; } catch { return fallback; } };
@@ -330,11 +364,30 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
   function cardPanes(bf, fl, url, w, h, x0, y0) {
     crop(bf, url, w, h, x0, y0); crop(fl, url, w, h, x0 + TILE + GAP, y0);
   }
+  // Arrows on the examples' brightfield, in camera pixels of the 80 x 80 tile: [to x, to y, from x, from y, label].
+  const NOTES = {
+    0: [[24, 37, 12, 20, "crisp edge"]], 2: [[21, 40, 12, 20, "soft edge"]], 3: [[33, 42, 16, 62, "streaks"]],
+    5: [[56, 38, 68, 20, "cut off"]], 6: [[61, 40, 70, 20, "cut off"]], 7: [[56, 34, 68, 18, "cut off"]],
+  };
+  function noteSvg(notes) {
+    const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 80 80"); svg.setAttribute("class", "notes"); svg.setAttribute("aria-hidden", "true");
+    const el = (tag, attrs) => { const e = document.createElementNS(ns, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); svg.append(e); return e; };
+    for (const [tx, ty, fx, fy, label] of notes) {
+      const ang = Math.atan2(ty - fy, tx - fx), head = (s) => `${tx - 7 * Math.cos(ang + s)},${ty - 7 * Math.sin(ang + s)}`;
+      const shaft = `M${fx},${fy} L${tx - 2 * Math.cos(ang)},${ty - 2 * Math.sin(ang)}`, tip = `M${tx},${ty} L${head(0.45)} L${head(-0.45)} Z`;
+      for (const [w, c] of [[4, "#000"], [2, "#ffd84d"]]) { el("path", { d: shaft, stroke: c, "stroke-width": w, fill: "none", "stroke-linecap": "round" }); el("path", { d: tip, fill: c, stroke: c, "stroke-width": w - 2 }); }
+      const half = label.length * 2.8, x = Math.min(80 - half - 1, Math.max(half + 1, fx));
+      el("text", { x, y: fy < 40 ? Math.max(9, fy - 3) : fy + 10, "text-anchor": "middle", class: "notetext" }).textContent = label;
+    }
+    return svg;
+  }
   $("examples").append(...GUIDE.map(([caption, v], k) => {
     const ex = document.createElement("div"); ex.className = "ex";
     const panes = document.createElement("div"); panes.className = "panes"; panes.setAttribute("role", "img"); panes.setAttribute("aria-label", caption);
     const [a, b] = [0, 1].map(() => { const p = document.createElement("div"); p.className = "pane"; const i = document.createElement("i"); p.append(i); panes.append(p); return i; });
     cardPanes(a, b, "sheets/guide.png", 2 * TILE + GAP, GUIDE.length * TILE, 0, k * TILE);
+    if (NOTES[k]) a.parentElement.append(noteSvg(NOTES[k]));
     const p = document.createElement("p");
     const chip = document.createElement("span"); chip.className = "chip " + v; chip.textContent = v === "keep" ? "Keep" : "Toss";
     const t = document.createElement("span"); t.textContent = caption;
@@ -374,7 +427,6 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
   function render() {
     const d = nDone(), s = $("score");
     if (s.textContent !== String(d)) { s.textContent = d; s.classList.remove("bump"); void s.offsetWidth; s.classList.add("bump"); }
-    $("count").textContent = `of ${N}`;
     $("barFill").style.width = (100 * d / Math.max(1, N)) + "%";
     $("backBtn").disabled = pos <= 0;
     $("fwdBtn").disabled = pos >= N - 1 || !votes[key()];   // no skipping past a card you haven't answered
@@ -438,15 +490,63 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
   function goForward() { if (pos < N - 1 && votes[key()]) show(pos + 1); }
   function finish() {
     render(); screen("done");
-    $("doneText").textContent = `${name ? name + ", you" : "You"} answered all ${N} cards. Your answers are saved.`;
-    // Every cell was shown twice: how often did both showings get the same answer?
-    const byItem = {}, totals = { keep: 0, toss: 0, unsure: 0 };
-    for (const [k, a] of Object.entries(votes)) { (byItem[itemOf(k)] ||= []).push(a.v); totals[a.v]++; }
-    const pairs = Object.values(byItem).filter((v) => v.length === 2), same = pairs.filter(([a, b]) => a === b).length;
+    const inBonus = N > BASE.length;
+    $("doneText").textContent = `${name ? name + ", you" : "You"} answered all ${N} cards${inBonus ? ", bonus round included" : ""}. Your answers are saved.`;
+    // Every cell was shown twice: how often did both showings get the same answer? (the bonus round doesn't count)
+    const totals = { keep: 0, toss: 0, unsure: 0 };
+    for (const a of Object.values(votes)) totals[a.v]++;
+    const pairs = Object.values(baseAnswers()).filter((ks) => ks.length === 2), same = pairs.filter(([a, b]) => votes[a].v === votes[b].v).length;
     $("consistPct").textContent = pairs.length ? `${Math.round(100 * same / pairs.length)}%` : "–";
     $("consistText").textContent = `You gave the same answer both times for ${same} of ${pairs.length} cells.`;
     $("totalsText").textContent = `Keep ${totals.keep} · Toss ${totals.toss} · Not sure ${totals.unsure}`;
+    const extra = inBonus ? [] : bonusCards();
+    $("bonusBtn").hidden = $("bonusText").hidden = !extra.length;
+    $("bonusBtn").textContent = `Bonus round: ${extra.length / 2} cells you answered differently (${extra.length} cards)`;
   }
+
+  // ---- bonus round: the cells someone answered differently on their two showings, twice more each ----
+  function baseAnswers() {   // item -> its answered cards among the set's two showings
+    const byItem = {};
+    for (const k of BASE) if (votes[k]) (byItem[itemOf(k)] ||= []).push(k);
+    return byItem;
+  }
+  // Each comes back in the two orientations it hasn't been shown in, once brightfield only and once with both panels:
+  // all first showings in a fixed shuffle, then all second ones in the same shuffle started halfway, so a cell's two
+  // showings are between half and one and a half rounds apart. Keys and order follow from the items, so every device
+  // makes the same round.
+  function bonusCards() {
+    const mix = (i) => Math.imul(i ^ 0x5bd1e995, 2654435761) >>> 0;
+    const pick = [];
+    for (const [it, ks] of Object.entries(baseAnswers())) {
+      if (ks.length !== 2 || votes[ks[0]].v === votes[ks[1]].v) continue;
+      const i = +it, seen = BASE.filter((k) => itemOf(k) === i).map((k) => k.replace(/^\d+/, "").replace("b", ""));
+      const [oA, oB] = ORIENTS.filter((o) => !seen.includes(o));
+      const bfA = i % 2 === 1;
+      pick.push({ i, a: `${i}${oA}${bfA ? "b" : ""}`, b: `${i}${oB}${bfA ? "" : "b"}` });
+    }
+    pick.sort((p, q) => mix(p.i) - mix(q.i));
+    const h = Math.floor(pick.length / 2);
+    return [...pick.map((p) => p.a), ...pick.slice(h).map((p) => p.b), ...pick.slice(0, h).map((p) => p.b)];
+  }
+  $("bonusBtn").addEventListener("click", () => {
+    const extra = bonusCards();
+    if (!extra.length) return;
+    local.set("bonus", JSON.stringify(extra), true);
+    DISPLAY = BASE.concat(extra); N = DISPLAY.length;
+    screen("labeller"); show(BASE.length);
+  });
+
+  // ---- sharing: the device's own share menu where there is one, else Facebook or the link ----
+  const SHARE = { title: "OKFlow", text: "Help the Weiss Lab sort sharp cell images from blurry ones, one swipe at a time.", url: "https://okflow.weisslab.ca/" };
+  for (const b of document.querySelectorAll(".shareBtn")) b.addEventListener("click", async () => {
+    if (navigator.share) {
+      try { await navigator.share(SHARE); return; } catch (e) { if (e && e.name === "AbortError") return; }
+    }
+    b.nextElementSibling.hidden = false;
+  });
+  for (const b of document.querySelectorAll(".copyLink")) b.addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(SHARE.url); b.textContent = "Link copied"; } catch { b.textContent = SHARE.url; }
+  });
   function startLabelling() {
     screen("labeller");
     const p = firstUnanswered(0);
@@ -528,20 +628,30 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
   $("boardBack").addEventListener("click", () => screen(returnTo));
   $("boardBack").textContent = "Back";
 
-  // ---- milestone: every 50 cards, a 10-second break with cells flowing past ----
+  // ---- milestone: every 50 cards, a 5-second break with cells flowing past ----
   let flowAnim = 0;
   function milestone(d) {
     const cheer = CHEERS[(d / 50 - 1) % CHEERS.length];
     $("mN").textContent = d; $("mTitle").textContent = cheer;
+    // one award per 50 cards so far, piling up one after another; a bigger gold one every 500
+    const aw = $("mAwards"); aw.replaceChildren();
+    const tints = ["var(--keep)", "#5b8def", "var(--unsure)", "#b06bd6"];
+    for (let m = 50, i = 0; m <= d; m += 50, i++) {
+      const b = document.createElement("span");
+      b.className = "award" + (m % 500 === 0 ? " gold" : "") + (m === d ? " new" : "");
+      b.textContent = m; b.style.animationDelay = `${Math.min(i * 70, 1500)}ms`;
+      if (m % 500) b.style.background = tints[i % tints.length];
+      aw.append(b);
+    }
     const rankText = () => {
       const rows = rankRows(), rank = rows.findIndex((r) => r.me) + 1;
-      $("mText").textContent = (rank && rows.length > 1 ? `You're #${rank} of ${rows.length} on the leaderboard. ` : "") + `${N - d} cards to go. Take a breath.`;
+      $("mText").textContent = (rank && rows.length > 1 ? `You're #${rank} of ${rows.length} on the leaderboard. ` : "") + "Take a breath.";
     };
     rankText(); loadBoard().then(rankText);
     $("milestone").hidden = false;
     try { navigator.vibrate?.([60, 40, 60]); } catch {}
     const go = $("mGo"); go.disabled = true;
-    let left = 10; go.textContent = `Keep going in ${left}`;
+    let left = 5; go.textContent = `Keep going in ${left}`;
     clearInterval(tick);
     tick = setInterval(() => {
       left -= 1;
@@ -592,22 +702,22 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     draw();
   }
 
-  // ---- the swipe, pinch zoom and wheel zoom ----
-  const pts = new Map();
+  // ---- the swipe, pinch zoom and wheel zoom: anywhere on the labelling screen except its buttons ----
+  const zone = $("labeller"), pts = new Map();
   let x0 = null, y0 = 0, dx = 0, dy = 0, t0 = 0, pinch = null, lastTap = 0;
   const isUp = () => -dy > Math.abs(dx);
   const setZoom = (z) => { zoom = Math.min(4, Math.max(1, z)); applyZoom(); };
   const dist = () => { const [a, b] = [...pts.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
-  card.addEventListener("pointerdown", (e) => {
-    if (e.target.id === "zoomReset") return;
+  zone.addEventListener("pointerdown", (e) => {
+    if (e.target.closest("button, a, input")) return;
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    card.setPointerCapture(e.pointerId);
+    zone.setPointerCapture(e.pointerId);
     if (pts.size === 2) { pinch = { d: dist(), z: zoom }; x0 = null; card.style.transform = ""; resetStamps(); return; }
     if (pts.size > 2 || pinch) return;
     x0 = e.clientX; y0 = e.clientY; dx = 0; dy = 0; t0 = performance.now();
     card.classList.remove("settle", "fly");
   });
-  card.addEventListener("pointermove", (e) => {
+  zone.addEventListener("pointermove", (e) => {
     if (!pts.has(e.pointerId)) return;
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pinch && pts.size === 2) { setZoom(pinch.z * dist() / pinch.d); return; }
@@ -633,8 +743,8 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
       lastTap = performance.now();
     }
   }
-  card.addEventListener("pointerup", release);
-  card.addEventListener("pointercancel", release);
+  zone.addEventListener("pointerup", release);
+  zone.addEventListener("pointercancel", release);
   card.addEventListener("wheel", (e) => { e.preventDefault(); setZoom(zoom * (e.deltaY < 0 ? 1.15 : 1 / 1.15)); }, { passive: false });
   $("zoomReset").addEventListener("click", () => setZoom(1));
   function resetStamps() { for (const id of ["stampKeep", "stampToss", "stampUnsure"]) $(id).style.opacity = 0; }
@@ -660,6 +770,7 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
   $("fwdBtn").addEventListener("click", goForward);
   $("reviewBtn").addEventListener("click", goBack);
   $("guideBtn").addEventListener("click", () => { $("beginBtn").textContent = "Back to labelling"; screen("guide"); });
+  $("pausedGuide").addEventListener("click", () => { $("beginBtn").textContent = "Back to labelling"; screen("guide"); });
   $("beginBtn").addEventListener("click", startLabelling);
   document.addEventListener("keydown", (e) => {
     if ($("labeller").hidden || e.target.tagName === "INPUT" || !$("milestone").hidden) return;
@@ -678,8 +789,9 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
   });
   $("beginBtn").disabled = true;
   fetch("cards.json").then((r) => r.json()).then((o) => {
-    SET = o.set_id; DISPLAY = o.display; N = DISPLAY.length;
+    SET = o.set_id; BASE = o.display;
     votes = readJSON("votes", {}); outbox = readJSON("outbox", []); seq = Number(local.get("seq", true)) || 0;
+    DISPLAY = BASE.concat(readJSON("bonus", [])); N = DISPLAY.length;
     $("beginBtn").disabled = false;
     preload(sheetUrl(Math.floor((itemOf(DISPLAY[0]) - 1) / PER_SHEET)));
     connect();
