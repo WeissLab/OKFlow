@@ -233,6 +233,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
 <div class="app">
   <section class="welcome" id="welcome">
     <div class="brandrow"><p class="brand" aria-label="OKFlow"><span class="cell-o" aria-hidden="true"></span><span aria-hidden="true">KFlow</span></p><button class="theme" id="themeBtn1" type="button">Dark mode</button></div>
+    <p class="note keepnote" id="welcomeBack" hidden></p>
     <h1>Is this cell image good enough to analyse?</h1>
     <p class="muted">One cell at a time from an imaging flow cytometer: brightfield on the left, fluorescence (DNA damage foci) on the right. Base your answer on the brightfield; the fluorescence, when it's shown, is an extra guide. <span class="touchonly">Swipe anywhere on the screen. Pinch to zoom.</span><span class="mouseonly">On a computer, use the arrow keys: <kbd>→</kbd> keep, <kbd>←</kbd> reject, <kbd>↑</kbd> not sure.</span></p>
     <div class="rules">
@@ -255,7 +256,8 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   </section>
 
   <section class="page" id="guide" hidden>
-    <h1>Instructions</h1>
+    <h1 id="guideTitle">Instructions</h1>
+    <p class="note keepnote" id="guideBack" hidden></p>
     <p class="note keepnote"><strong>Base your answer on the brightfield</strong> (the grey image on the left). When the fluorescence image is shown too, use it as an extra guide, for example to tell one cell from two, or a cell from a bead or debris. Fluorescence often looks soft even when the cell is sharp.</p>
     <div class="note keynote desktop-only">
       <div class="keypad" aria-hidden="true"><kbd class="k-up">↑</kbd><kbd class="k-left">←</kbd><kbd class="k-right">→</kbd></div>
@@ -691,6 +693,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     queueSave(); loadBoard();
     $("codeForm").hidden = true; $("codeIn").value = "";
     say(`Welcome back${name ? ", " + name : ""}: your ${nDone()} answers are here. Tap Next to continue.`);
+    welcomeBack();
   });
   $("boardBtn").addEventListener("click", () => openBoard("labeller"));
   $("doneBoard").addEventListener("click", () => openBoard("done"));
@@ -909,8 +912,8 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   $("backBtn").addEventListener("click", goBack);
   $("fwdBtn").addEventListener("click", goForward);
   $("reviewBtn").addEventListener("click", goBack);
-  $("guideBtn").addEventListener("click", () => { $("beginBtn").querySelector(".lbl").textContent = "Back to labelling"; screen("guide"); });
-  $("pausedGuide").addEventListener("click", () => { $("beginBtn").querySelector(".lbl").textContent = "Back to labelling"; screen("guide"); });
+  $("guideBtn").addEventListener("click", () => { $("beginBtn").querySelector(".lbl").textContent = "Back to labelling"; $("guideTitle").textContent = "Instructions"; screen("guide"); });
+  $("pausedGuide").addEventListener("click", () => { $("beginBtn").querySelector(".lbl").textContent = "Back to labelling"; $("guideTitle").textContent = "Instructions"; screen("guide"); });
   $("beginBtn").addEventListener("click", startLabelling);
   // ---- keyboard: every screen runs from the keys shown on its buttons, so a computer never needs the mouse ----
   const press = (id) => () => { const b = $(id); if (b && !b.hidden && !b.disabled) b.click(); };
@@ -951,11 +954,27 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     SET = o.set_id; BASE = o.display;
     votes = readJSON("votes", {}); outbox = readJSON("outbox", []); seq = Number(local.get("seq", true)) || 0;
     DISPLAY = BASE.concat(readJSON("bonus", [])); N = DISPLAY.length;
+    welcomeBack();
     $("beginBtn").disabled = false;
     preload(sheetUrl(Math.floor((itemOf(DISPLAY[0]) - 1) / PER_SHEET)));
     connect();
   }).catch(() => { $("welcomeStatus").textContent = "Couldn't load the cell list. Reload the page to try again."; });
   preload("sheets/guide.png");
+
+  // ---- returning on this device: say up front that nothing is lost, even though the instructions come again ----
+  function welcomeBack() {
+    const d = nDone(), back = d > 0, next = firstUnanswered(0);
+    const where = next === null ? "you've answered every card" : `you'll carry on from card ${(next + 1).toLocaleString()}`;
+    $("welcomeBack").hidden = $("guideBack").hidden = !back;
+    $("welcomeBack").textContent = `Welcome back${name ? ", " + name : ""}! Your ${d.toLocaleString()} answers are saved. ` +
+      `You'll see the instructions again as a quick refresher, then ${where}.`;
+    $("guideBack").textContent = `Just a refresher: your ${d.toLocaleString()} answers are saved and ${where}.`;
+    $("start").querySelector(".lbl").textContent = back ? "Next: quick refresher" : "Next: see examples";
+    if ($("beginBtn").querySelector(".lbl").textContent !== "Back to labelling") {
+      $("beginBtn").querySelector(".lbl").textContent = back ? "Continue labelling" : "Start labelling";
+      $("guideTitle").textContent = back ? "Refresher before you continue" : "Instructions";
+    }
+  }
 
   // ---- one-time import of answers given on the earlier OKCell page (its saved labeller document, as JSON) ----
   // Each earlier answer, revisions included, becomes a row as if given here, keeping its time and decision ms.
@@ -993,6 +1012,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     for (const r of rows) { r.seq = ++seq; outbox.push(r); }
     local.set("outbox", JSON.stringify(outbox), true); local.set("seq", String(seq), true);
     queueSave();
+    welcomeBack();
     say(n ? `Imported ${n} answers${name ? " as " + name : ""}. Tap Next and you'll continue from where you left off.`
           : "Those answers are already here. Tap Next to continue.");
   });
