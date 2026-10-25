@@ -38,6 +38,9 @@ answers.
 
 ## Set up (once)
 
+Done 2026-10-25: Supabase organization WeissLab, project OKFlow (`mflrlsqsawvuyhfxzajc`, Canada Central);
+DNS record `okflow` in Cloudflare (proxied). The steps are kept for rebuilding it.
+
 ### 1. Supabase
 
 1. At supabase.com, create a project (any name, e.g. `okflow`; free plan; a region near Montréal, e.g. Canada Central).
