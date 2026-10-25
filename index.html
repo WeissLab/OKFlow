@@ -162,11 +162,28 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
 /* milestone: a short break every 50 cells */
 .milestone { position: fixed; inset: 0; z-index: 20; background: var(--veil); display: grid; place-items: center; padding: max(24px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
 .milestone canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.mbox { position: relative; display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center; max-width: 420px; }
-.mbox h2 { font-family: var(--display); font-weight: 800; font-size: 2.4rem; line-height: 1.05; margin: 0; color: var(--keep); text-wrap: balance; }
+.mbox { position: relative; display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; max-width: 420px; }
+.mbox h2 { font-family: var(--display); font-weight: 800; font-size: 2.1rem; line-height: 1.05; margin: 0; color: var(--keep); text-wrap: balance; }
+.countdown { position: relative; width: min(40vw, 160px); aspect-ratio: 1; display: grid; place-items: center; }
+.countdown svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+.countdown circle { fill: none; stroke-width: 8; }
+.countdown .track { stroke: var(--line); }
+.countdown .ring { stroke: var(--keep); stroke-linecap: round; stroke-dasharray: 276.46; }
+.countdown span { font-family: var(--display); font-weight: 800; font-size: min(22vw, 6rem); line-height: 1; font-variant-numeric: tabular-nums; color: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .countdown .ring { transition: none !important; } }
+/* short phones: everything on the break screen a size down, and it can scroll rather than clip */
+.milestone { overflow-y: auto; }
+@media (max-height: 720px) {
+  .mbox { gap: 8px; } .mbox .big-n { font-size: 3rem; } .mbox h2 { font-size: 1.8rem; }
+  .countdown { width: min(36vw, 140px); } .countdown span { font-size: min(20vw, 5rem); }
+  .award { width: 34px; height: 34px; } .award i { font-size: 0.95rem; } .award.gold { width: 42px; height: 42px; }
+}
 .awards { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 340px; }
-.award { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font: 800 0.72rem var(--display); color: #fff; box-shadow: inset 0 0 0 3px rgb(255 255 255 / 0.35), 0 2px 6px rgb(0 0 0 / 0.25); animation: pile .35s ease-out both; }
-.award.gold { width: 44px; height: 44px; background: linear-gradient(135deg, #f6d36b, #c99400); color: #3d2c00; }
+.award { width: 40px; height: 40px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; box-shadow: inset 0 0 0 3px rgb(255 255 255 / 0.35), 0 2px 6px rgb(0 0 0 / 0.25); animation: pile .35s ease-out both; }
+.award i { font-style: normal; font-size: 1.15rem; line-height: 1; }
+.award small { font: 800 0.5rem var(--display); line-height: 1; margin-top: 1px; opacity: 0.9; }
+.award.gold { width: 50px; height: 50px; background: radial-gradient(circle at 35% 30%, #fff3c4, #f0c64a 45%, #b58500); color: #3d2c00; }
+.award.gold i { font-size: 1.5rem; }
 .award.new { animation: pop .7s cubic-bezier(.3, 1.7, .5, 1) both; }
 @keyframes pile { from { transform: translateY(-14px); opacity: 0; } }
 @keyframes pop { from { transform: scale(0) rotate(-40deg); opacity: 0; } }
@@ -292,6 +309,10 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     <h2 id="mTitle">You've got flow!</h2>
     <div class="awards" id="mAwards" aria-label="Your awards so far"></div>
     <p class="muted" id="mText"></p>
+    <div class="countdown" id="mCount" aria-live="polite">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" class="track"/><circle cx="50" cy="50" r="44" class="ring" id="mRing"/></svg>
+      <span id="mLeft">5</span>
+    </div>
     <button class="go" type="button" id="mGo" disabled>Keep going</button>
     <button type="button" id="mPause">Pause for now</button>
   </div>
@@ -317,6 +338,8 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     "Nucleus of the team", "Totally in focus", "Membrane-blowing!", "Cytometry champion", "Out of focus? Not you.",
     "Rolling with the flow"];
   const WORD = { keep: "keep", toss: "toss", unsure: "not sure" };
+  const AWARDS = ["🔬", "🧫", "🧬", "🧪", "🎯", "💡", "🔭", "🌟", "🚀", "🦠", "🧠", "🌊", "💎", "🎨", "🧲", "📸", "🎉",
+    "🌈", "⚡", "🍀", "🔥", "🦉", "🐙", "🌋", "🛰️", "🎆", "🧭", "🪐", "🎻", "🦄"];
   const $ = (id) => document.getElementById(id);
   // Per-set values (answers, outbox) are keyed by the set; name and theme are shared.
   const local = {
@@ -633,15 +656,18 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
   function milestone(d) {
     const cheer = CHEERS[(d / 50 - 1) % CHEERS.length];
     $("mN").textContent = d; $("mTitle").textContent = cheer;
-    // one award per 50 cards so far, piling up one after another; a bigger gold one every 500
+    // one award per 50 cards so far, each its own, piling up one after another; a gold trophy every 500
     const aw = $("mAwards"); aw.replaceChildren();
-    const tints = ["var(--keep)", "#5b8def", "var(--unsure)", "#b06bd6"];
+    const tints = ["#0e8a6a", "#3f6fd8", "#8a6d1a", "#9a4fc4", "#c2513f"];
     for (let m = 50, i = 0; m <= d; m += 50, i++) {
-      const b = document.createElement("span");
-      b.className = "award" + (m % 500 === 0 ? " gold" : "") + (m === d ? " new" : "");
-      b.textContent = m; b.style.animationDelay = `${Math.min(i * 70, 1500)}ms`;
-      if (m % 500) b.style.background = tints[i % tints.length];
-      aw.append(b);
+      const b = document.createElement("span"), gold = m % 500 === 0;
+      b.className = "award" + (gold ? " gold" : "") + (m === d ? " new" : "");
+      b.style.animationDelay = `${Math.min(i * 70, 1500)}ms`;
+      if (!gold) b.style.background = tints[i % tints.length];
+      b.title = `${m} cards`;
+      const icon = document.createElement("i"); icon.textContent = gold ? "🏆" : m === 1600 ? "👑" : AWARDS[(m / 50 - 1 - Math.floor(m / 500)) % AWARDS.length];
+      const n = document.createElement("small"); n.textContent = m;
+      b.append(icon, n); aw.append(b);
     }
     const rankText = () => {
       const rows = rankRows(), rank = rows.findIndex((r) => r.me) + 1;
@@ -650,13 +676,17 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     rankText(); loadBoard().then(rankText);
     $("milestone").hidden = false;
     try { navigator.vibrate?.([60, 40, 60]); } catch {}
-    const go = $("mGo"); go.disabled = true;
-    let left = 5; go.textContent = `Keep going in ${left}`;
+    // a big countdown ring, then "Keep going" opens up
+    const go = $("mGo"), BREAK = 5, ring = $("mRing");
+    go.disabled = true; go.textContent = "Keep going"; $("mCount").hidden = false;
+    let left = BREAK; $("mLeft").textContent = left;
+    ring.style.transition = "none"; ring.style.strokeDashoffset = "0"; void ring.getBoundingClientRect();
+    ring.style.transition = `stroke-dashoffset ${BREAK}s linear`; ring.style.strokeDashoffset = String(2 * Math.PI * 44);
     clearInterval(tick);
     tick = setInterval(() => {
       left -= 1;
-      if (left <= 0) { clearInterval(tick); go.disabled = false; go.textContent = "Keep going"; go.focus(); }
-      else go.textContent = `Keep going in ${left}`;
+      if (left <= 0) { clearInterval(tick); $("mCount").hidden = true; go.disabled = false; go.focus(); }
+      else $("mLeft").textContent = left;
     }, 1000);
     startFlow();
   }
