@@ -178,6 +178,19 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
   .countdown { width: min(36vw, 140px); } .countdown span { font-size: min(20vw, 5rem); }
   .award { width: 34px; height: 34px; } .award i { font-size: 0.95rem; } .award.gold { width: 42px; height: 42px; }
 }
+.consist { width: min(100%, 300px); display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.consist-head { margin: 0; display: flex; align-items: baseline; gap: 8px; font-size: 0.9rem; color: var(--muted); text-align: center; }
+.consist-head b { font-family: var(--display); font-size: 1.6rem; color: var(--keep); font-variant-numeric: tabular-nums; }
+.consist svg { width: 100%; height: auto; overflow: visible; }
+.consist .grid { stroke: var(--line); stroke-dasharray: 3 3; }
+.consist .axis { font: 600 9px var(--body); fill: var(--muted); }
+.consist .line { fill: none; stroke: var(--keep); stroke-width: 2; stroke-linejoin: round; }
+.consist .dot { fill: var(--surface); stroke: var(--keep); stroke-width: 2; }
+.consist .dot.now { fill: var(--keep); }
+.consist-cap { margin: 0; font-size: 0.72rem; color: var(--muted); text-align: center; }
+.awards.many { gap: 4px; max-width: 350px; }
+.awards.many .award { width: 30px; height: 30px; } .awards.many .award i { font-size: 0.9rem; } .awards.many .award small { display: none; }
+.awards.many .award.gold { width: 36px; height: 36px; } .awards.many .award.gold i { font-size: 1.15rem; }
 .awards { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 340px; }
 .award { width: 40px; height: 40px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; box-shadow: inset 0 0 0 3px rgb(255 255 255 / 0.35), 0 2px 6px rgb(0 0 0 / 0.25); animation: pile .35s ease-out both; }
 .award i { font-style: normal; font-size: 1.15rem; line-height: 1; }
@@ -308,6 +321,7 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     <p class="big-n" id="mN">50</p>
     <h2 id="mTitle">You've got flow!</h2>
     <div class="awards" id="mAwards" aria-label="Your awards so far"></div>
+    <div class="consist" id="mConsist"></div>
     <p class="muted" id="mText"></p>
     <div class="countdown" id="mCount" aria-live="polite">
       <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" class="track"/><circle cx="50" cy="50" r="44" class="ring" id="mRing"/></svg>
@@ -669,6 +683,16 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
       const n = document.createElement("small"); n.textContent = m;
       b.append(icon, n); aw.append(b);
     }
+    aw.classList.toggle("many", d / 50 > 14);
+    // self-consistency so far (cells answered on both showings), one dot per break
+    const pairs = Object.values(baseAnswers()).filter((ks) => ks.length === 2);
+    const same = pairs.filter(([a, b]) => votes[a].v === votes[b].v).length;
+    let hist = readJSON("consist", []);
+    if (pairs.length >= 20) {
+      hist = hist.filter((h) => h.d < d).concat([{ d, pct: Math.round(100 * same / pairs.length) }]).slice(-40);
+      local.set("consist", JSON.stringify(hist), true);
+    }
+    drawConsist(hist, pairs.length);
     const rankText = () => {
       const rows = rankRows(), rank = rows.findIndex((r) => r.me) + 1;
       $("mText").textContent = (rank && rows.length > 1 ? `You're #${rank} of ${rows.length} on the leaderboard. ` : "") + "Take a breath.";
@@ -697,6 +721,30 @@ input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius
     shownAt = performance.now();   // the break doesn't count toward the next card's time
   }
   $("mGo").addEventListener("click", closeMilestone);
+  function drawConsist(hist, nPairs) {
+    const box = $("mConsist"); box.replaceChildren();
+    const head = document.createElement("p"); head.className = "consist-head";
+    if (nPairs < 20 || !hist.length) {
+      head.textContent = `Your self-consistency score appears once 20 cells have come back a second time (${nPairs} so far).`;
+      box.append(head); return;
+    }
+    const last = hist[hist.length - 1];
+    head.innerHTML = `<span class="score-label">Self-consistency</span> <b></b>`;
+    head.querySelector("b").textContent = `${last.pct}%`;
+    const ns = "http://www.w3.org/2000/svg", W = 260, H = 58, P = 8, L = 30;
+    const lo = Math.min(50, Math.floor(Math.min(...hist.map((h) => h.pct)) / 10) * 10);
+    const x = (i) => L + (hist.length > 1 ? i * (W - L - P) / (hist.length - 1) : (W - L - P) / 2);
+    const y = (v) => P + (100 - v) * (H - 2 * P) / (100 - lo);
+    const svg = document.createElementNS(ns, "svg"); svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.setAttribute("role", "img"); svg.setAttribute("aria-label", `Self-consistency at each break: ${hist.map((h) => h.pct + "%").join(", ")}`);
+    const el = (tag, attrs, text) => { const e = document.createElementNS(ns, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); if (text) e.textContent = text; svg.append(e); return e; };
+    for (const v of [lo, 100]) { el("line", { x1: L, x2: W - P, y1: y(v), y2: y(v), class: "grid" }); el("text", { x: L - 4, y: y(v) + 3, "text-anchor": "end", class: "axis" }, `${v}%`); }
+    if (hist.length > 1) el("polyline", { points: hist.map((h, i) => `${x(i)},${y(h.pct)}`).join(" "), class: "line" });
+    hist.forEach((h, i) => el("circle", { cx: x(i), cy: y(h.pct), r: i === hist.length - 1 ? 4.5 : 3, class: i === hist.length - 1 ? "dot now" : "dot" }));
+    const cap = document.createElement("p"); cap.className = "consist-cap";
+    cap.textContent = "how often you gave a cell the same answer both times, at each break";
+    box.append(head, svg, cap);
+  }
   // Pausing needs no saving step: every answer is already saved as it's given.
   $("mPause").addEventListener("click", () => {
     closeMilestone(); screen("paused");
