@@ -38,7 +38,7 @@ answers.
 
 ## Set up (once)
 
-Done 2026-10-25: Supabase organization WeissLab, project OKFlow (`mflrlsqsawvuyhfxzajc`, Canada Central);
+Done 2026-10-25: Supabase organization WeissLab, project OKFlow (`mflrlsqsawvuyhfxzajc`);
 DNS record `okflow` in Cloudflare (proxied). The steps are kept for rebuilding it.
 
 ### 1. Supabase
