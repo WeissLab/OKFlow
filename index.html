@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OKFlow</title>
+<meta name="description" content="Help the Weiss Lab sort sharp cell images from blurry ones, one swipe at a time.">
+<meta name="theme-color" content="#eef1f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#10151c" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='%230e8a6a' stroke-width='4'/%3E%3Ccircle cx='14' cy='16' r='5' fill='%230e8a6a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* One screen, thumb-first: back / Cellcount / forward on top, the cell card in the middle, the three choices at the bottom. */
+:root {
+  --bg: #eef1f4;
+  --surface: #ffffff;
+  --ink: #18202a;
+  --muted: #5d6877;
+  --line: #d3d9e1;
+  --keep: #0e8a6a;
+  --toss: #d2483a;
+  --unsure: #8a6d1a;
+  --scope: #0b0f16;
+  --scope-ink: #b8c2cf;
+  --veil: rgb(238 241 244 / 0.94);
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10151c; --surface: #19212b; --ink: #e8edf3; --muted: #9aa6b5; --line: #2c3744;
+    --keep: #3cc79f; --toss: #ff7a6b; --unsure: #e6c35a; --scope: #05080c; --veil: rgb(16 21 28 / 0.95); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10151c; --surface: #19212b; --ink: #e8edf3; --muted: #9aa6b5; --line: #2c3744;
+  --keep: #3cc79f; --toss: #ff7a6b; --unsure: #e6c35a; --scope: #05080c; --veil: rgb(16 21 28 / 0.95); color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg); color: var(--ink); font: 16px/1.45 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  overscroll-behavior: none;
+}
+.app { height: 100%; height: 100dvh; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; padding-block: 12px; }
+@media (min-width: 700px) { .app { max-width: 720px; } body { font-size: 18px; } }
+h1 { font-family: var(--display); font-weight: 800; letter-spacing: -0.01em; text-wrap: balance; margin: 0; font-size: 1.7rem; line-height: 1.1; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 0.82rem; }
+.small a { color: inherit; }
+button { font: inherit; cursor: pointer; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 10px 18px; touch-action: manipulation; }
+button:focus-visible, input:focus-visible { outline: 3px solid color-mix(in srgb, var(--keep) 60%, transparent); outline-offset: 2px; }
+button:disabled { opacity: 0.4; cursor: default; }
+.brandrow { display: flex; justify-content: space-between; align-items: center; margin-bottom: -8px; }
+.brand { font-family: var(--display); font-weight: 800; font-size: 1.1rem; letter-spacing: 0.02em; color: var(--toss); }
+.brand::after { content: ""; display: inline-block; width: 0.8em; height: 0.8em; margin-left: 0.3em; vertical-align: -0.05em; border-radius: 50%; border: 0.12em solid var(--keep); background: radial-gradient(circle at 42% 45%, var(--keep) 0 22%, transparent 24%); }
+.theme { padding: 4px 12px; font-size: 0.8rem; }
+.go { background: var(--ink); color: var(--bg); border-color: var(--ink); font-weight: 700; padding: 13px 18px; }
+.linkish { background: none; border: none; padding: 0; color: var(--muted); text-decoration: underline; font-size: 0.8rem; }
+
+/* landing: the name entry */
+.welcome { display: flex; flex-direction: column; gap: 16px; margin-block: auto; }
+.rules { display: grid; grid-template-columns: auto 1fr; gap: 10px 14px; align-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+.chip { font-weight: 700; font-size: 0.85rem; padding: 3px 10px; border-radius: 999px; color: var(--surface); white-space: nowrap; text-align: center; }
+.chip.keep { background: var(--keep); } .chip.toss { background: var(--toss); } .chip.unsure { background: var(--unsure); }
+.field { display: flex; flex-direction: column; gap: 8px; }
+label { font-weight: 700; }
+input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+
+/* the two image panels: brightfield and fluorescence, each a square crop of a sprite sheet */
+.panes { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.pane { position: relative; aspect-ratio: 1; overflow: hidden; border-radius: 6px; background: #222; }
+.pane > i { position: absolute; inset: 0; background-repeat: no-repeat; image-rendering: pixelated; transform-origin: 50% 50%; }
+
+/* guide and leaderboard */
+.page { display: flex; flex-direction: column; gap: 14px; min-height: 0; flex: 1; }
+.scroll { flex: 1; min-height: 0; overflow-y: auto; display: grid; align-content: start; gap: 10px; padding-bottom: 4px; }
+.ex { display: grid; grid-template-columns: 58% 1fr; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 8px; }
+.ex p { font-size: 0.92rem; line-height: 1.3; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.board { display: grid; gap: 6px; list-style: none; margin: 0; padding: 0; counter-reset: rank; }
+.board li { display: grid; grid-template-columns: 2.2em 1fr auto; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; counter-increment: rank; }
+.board li::before { content: counter(rank); font-family: var(--display); font-weight: 800; color: var(--muted); }
+.board li.me { border-color: var(--keep); border-width: 2px; }
+.board .n { font-family: var(--display); font-weight: 800; font-variant-numeric: tabular-nums; color: var(--keep); }
+.board .who { min-width: 0; overflow-wrap: anywhere; }
+
+/* labelling */
+.labeller { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
+.top { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
+.nav { padding: 6px 12px; font-size: 0.9rem; }
+.progress { display: flex; flex-direction: column; gap: 4px; }
+.bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.bar > i { display: block; height: 100%; width: 0; background: var(--keep); transition: width .25s; }
+.count { font-variant-numeric: tabular-nums; font-size: 0.8rem; color: var(--muted); text-align: center; }
+.score { display: flex; align-items: baseline; justify-content: center; gap: 8px; }
+.score-label { font-family: var(--display); font-weight: 600; font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.score-n { font-family: var(--display); font-weight: 800; font-size: 2.2rem; line-height: 1; font-variant-numeric: tabular-nums; color: var(--keep); }
+.score-n.bump { animation: bump .25s ease-out; }
+@keyframes bump { 50% { transform: scale(1.18); } }
+.stage { flex: 1; min-height: 0; display: grid; place-items: center; }
+.card { width: 100%; max-width: calc((100dvh - 300px) * 2.1); background: var(--scope); border-radius: 18px; padding: 10px 10px 8px; box-shadow: 0 10px 30px rgb(0 0 0 / 0.18); user-select: none; -webkit-user-select: none; touch-action: none; position: relative; will-change: transform; cursor: grab; }
+.card.single { max-width: min(100%, calc(100dvh - 330px)); }
+.card.single .panes, .card.single .legend { grid-template-columns: 1fr; }
+.card.single .pane + .pane, .card.single .legend span + span { display: none; }
+.card.fly { transition: transform .23s ease-in, opacity .23s ease-in; }
+.card.settle { transition: transform .2s ease-out; }
+.legend { display: grid; grid-template-columns: 1fr 1fr; color: var(--scope-ink); font-size: 0.8rem; padding-top: 6px; text-align: center; }
+.item { position: absolute; top: 14px; left: 16px; font-size: 0.75rem; color: var(--scope-ink); font-variant-numeric: tabular-nums; background: rgb(0 0 0 / 0.5); padding: 1px 7px; border-radius: 6px; }
+.zoomed { position: absolute; top: 14px; right: 16px; font-size: 0.75rem; color: var(--scope-ink); background: rgb(0 0 0 / 0.5); padding: 1px 7px; border-radius: 6px; border: 0; }
+.stamp { position: absolute; font-family: var(--display); font-weight: 800; font-size: 1.5rem; padding: 2px 12px; border: 3px solid; border-radius: 10px; opacity: 0; background: rgb(0 0 0 / 0.45); pointer-events: none; }
+.stamp.keep { top: 18px; right: 18px; color: var(--keep); border-color: var(--keep); transform: rotate(8deg); }
+.stamp.toss { top: 18px; left: 18px; color: var(--toss); border-color: var(--toss); transform: rotate(-8deg); }
+.stamp.unsure { bottom: 40px; left: 50%; transform: translateX(-50%); color: var(--unsure); border-color: var(--unsure); white-space: nowrap; }
+.was { font-size: 0.85rem; text-align: center; min-height: 1.3em; color: var(--muted); }
+.actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.big { padding: 16px 6px; font-weight: 700; font-size: 1rem; border-width: 2px; }
+.big.toss { color: var(--toss); border-color: var(--toss); }
+.big.keep { color: var(--keep); border-color: var(--keep); }
+.big.unsure { color: var(--unsure); border-color: var(--unsure); }
+.big.on.toss { background: var(--toss); color: var(--surface); }
+.big.on.keep { background: var(--keep); color: var(--surface); }
+.big.on.unsure { background: var(--unsure); color: var(--surface); }
+.status { font-size: 0.8rem; color: var(--muted); text-align: center; min-height: 1.2em; }
+.status.warn { color: var(--toss); }
+.keys { display: none; }
+@media (hover: hover) and (pointer: fine) { .keys { display: block; } }
+.done { margin-block: auto; display: flex; flex-direction: column; gap: 14px; text-align: center; }
+
+/* milestone: a short break every 50 cells */
+.milestone { position: fixed; inset: 0; z-index: 20; background: var(--veil); display: grid; place-items: center; padding: max(24px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.milestone canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.mbox { position: relative; display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center; max-width: 420px; }
+.mbox h2 { font-family: var(--display); font-weight: 800; font-size: 2.4rem; line-height: 1.05; margin: 0; color: var(--keep); text-wrap: balance; }
+.mbox .big-n { font-family: var(--display); font-weight: 800; font-size: 4rem; line-height: 1; font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) { .card.fly, .card.settle, .bar > i { transition: none; } .score-n.bump { animation: none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="welcome" id="welcome">
+    <div class="brandrow"><p class="brand">OKFlow</p><button class="theme" id="themeBtn1" type="button">Dark mode</button></div>
+    <h1>Is this cell image good enough to analyse?</h1>
+    <p class="muted">One cell at a time from an imaging flow cytometer: brightfield on the left, fluorescence (DNA damage foci) on the right. Swipe the card or tap the buttons. Pinch to zoom.</p>
+    <div class="rules">
+      <span class="chip keep">Keep →</span><span>A single whole cell, sharp and in focus.</span>
+      <span class="chip toss">← Toss</span><span>Blurry or streaked, cut off, two cells, a bead or debris.</span>
+      <span class="chip unsure">↑ Not sure</span><span>You really can't decide.</span>
+    </div>
+    <form class="field" id="nameForm">
+      <label for="who">Your name, so we can thank you</label>
+      <input type="text" id="who" autocomplete="name" maxlength="60" placeholder="First and last name" required>
+      <button class="go" type="submit" id="start">Next: see examples</button>
+    </form>
+    <p class="muted small">We save your name, your answers and how long each one took, to build a reference set of cell images for the <a href="https://weisslab.ca">Weiss Lab</a> at Polytechnique Montréal. Your name appears on the leaderboard and in our thanks. Your place is kept on this device, so finish on the same phone or computer.</p>
+    <p class="status" id="welcomeStatus"></p>
+  </section>
+
+  <section class="page" id="guide" hidden>
+    <h1>What you'll see</h1>
+    <p class="muted">Judge the whole image. A cell that's cut off or stuck to another one gets tossed even when it's sharp. Some cards show the brightfield alone; judge those from the brightfield. Every cell comes back once, flipped or turned; just answer it again.</p>
+    <div class="scroll" id="examples"></div>
+    <button class="go" type="button" id="beginBtn">Start labelling</button>
+  </section>
+
+  <section class="page" id="boardPage" hidden>
+    <h1>Leaderboard</h1>
+    <p class="muted">Cells labelled so far.</p>
+    <div class="scroll"><ol class="board" id="board"></ol></div>
+    <button class="go" type="button" id="boardBack">Back to labelling</button>
+  </section>
+
+  <section class="labeller" id="labeller" hidden>
+    <div class="top">
+      <button class="nav" id="backBtn" type="button">← Back</button>
+      <div class="progress">
+        <div class="score"><span class="score-label">Cellcount</span><span class="score-n" id="score">0</span></div>
+        <div class="bar"><i id="barFill"></i></div>
+        <span class="count"><span id="count">of 1600</span> · <button class="linkish" id="guideBtn" type="button">examples</button> · <button class="linkish" id="boardBtn" type="button">leaderboard</button> · <button class="linkish" id="themeBtn2" type="button">dark</button></span>
+      </div>
+      <button class="nav" id="fwdBtn" type="button">Forward →</button>
+    </div>
+    <div class="stage">
+      <div class="card" id="card">
+        <div class="panes"><div class="pane"><i id="paneBf"></i></div><div class="pane"><i id="paneFl"></i></div></div>
+        <div class="legend"><span>Brightfield</span><span>Fluorescence</span></div>
+        <span class="item" id="itemNo">#1</span>
+        <button class="zoomed" id="zoomReset" type="button" hidden>1×</button>
+        <span class="stamp keep" id="stampKeep">KEEP</span>
+        <span class="stamp toss" id="stampToss">TOSS</span>
+        <span class="stamp unsure" id="stampUnsure">NOT SURE</span>
+      </div>
+    </div>
+    <p class="was" id="was"></p>
+    <div class="actions">
+      <button class="big toss" id="tossBtn" type="button">← Toss</button>
+      <button class="big unsure" id="unsureBtn" type="button">↑ Not sure</button>
+      <button class="big keep" id="keepBtn" type="button">Keep →</button>
+    </div>
+    <p class="status" id="status"></p>
+    <p class="muted small keys" style="text-align:center">Keys: → keep · ← toss · ↑ not sure · Backspace back · ↓ forward · + / − zoom</p>
+  </section>
+
+  <section class="done" id="done" hidden>
+    <h1>All done. Thank you!</h1>
+    <p class="muted" id="doneText"></p>
+    <button type="button" id="doneBoard">See the leaderboard</button>
+    <button type="button" id="reviewBtn">← Back to the last cell</button>
+  </section>
+</div>
+
+<div class="milestone" id="milestone" hidden>
+  <canvas id="flow"></canvas>
+  <div class="mbox">
+    <p class="score-label">Cellcount</p>
+    <p class="big-n" id="mN">50</p>
+    <h2 id="mTitle">You've got flow!</h2>
+    <p class="muted" id="mText"></p>
+    <button class="go" type="button" id="mGo" disabled>Keep going</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+(() => {
+  const PER_SHEET = 100, COLS = 5, ROWS = 20, TILE = 80, GAP = 2;
+  let SET = "";   // the label set's id, from cards.json
+  const card = document.getElementById("card");
+  const SHEET_W = COLS * (2 * TILE + GAP), SHEET_H = ROWS * TILE;
+  // scripts/make_swipe_set.py GUIDE, in order: cells from the same runs, never from the set
+  const GUIDE = [
+    ["Sharp", "keep"], ["Sharp, irregular shape", "keep"], ["Out of focus: soft and hazy", "toss"],
+    ["Streaked by motion", "toss"], ["Badly smeared", "toss"], ["Cut off at the edge, even if sharp", "toss"],
+    ["Two cells, or a clump", "toss"], ["Bead or dead cell", "toss"], ["Debris", "toss"],
+  ];
+  const CHEERS = ["You've got flow!", "Focus pocus!", "Cell yeah!", "Sharp eye!", "In the zone of focus",
+    "Flow state reached", "Brightfield, bright mind", "Laser-focused", "Cell-ebration time!", "Pixel perfect",
+    "Nucleus of the team", "Totally in focus", "Membrane-blowing!", "Cytometry champion", "Out of focus? Not you.",
+    "Rolling with the flow"];
+  const WORD = { keep: "keep", toss: "toss", unsure: "not sure" };
+  const $ = (id) => document.getElementById(id);
+  // Per-set values (answers, outbox) are keyed by the set; name and theme are shared.
+  const local = {
+    get(k, perSet) { try { return localStorage.getItem("okflow:" + (perSet ? SET + ":" : "") + k); } catch { return null; } },
+    set(k, v, perSet) { try { localStorage.setItem("okflow:" + (perSet ? SET + ":" : "") + k, v); } catch {} },
+  };
+
+  // ---- theme: follows the device until the viewer picks one ----
+  function applyTheme(t) {
+    if (t) document.documentElement.dataset.theme = t;
+    const dark = t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    $("themeBtn1").textContent = dark ? "Light mode" : "Dark mode";
+    $("themeBtn2").textContent = dark ? "light" : "dark";
+    return dark;
+  }
+  let dark = applyTheme(local.get("theme"));
+  for (const b of ["themeBtn1", "themeBtn2"]) $(b).addEventListener("click", () => {
+    const t = dark ? "light" : "dark"; local.set("theme", t); dark = applyTheme(t);
+  });
+
+  // card key -> {v: "keep" | "toss" | "unsure", ms: time to decide, at: ISO time,
+  //              prev: [earlier answers to this card, oldest first, same shape]}
+  // A key is the item number, then its orientation ("" as acquired, "h" flipped left-right, "v" upside down,
+  // "hv" both), then "b" when the card shows brightfield only: "404", "404vb", "37hvb", "37h".
+  let votes = {}, outbox = [], seq = 0;   // read from this device once cards.json gives the set
+  let name = local.get("name") || "";
+  let DISPLAY = [], N = 0;
+  let pos = 0, shownAt = performance.now(), zoom = 1;
+  let sb = null, uid = null, refused = false, boardRows = [];
+  const readJSON = (k, fallback) => { try { return JSON.parse(local.get(k, true) || "null") ?? fallback; } catch { return fallback; } };
+  const key = () => DISPLAY[pos];
+  $("who").value = name;
+
+  // ---- images ----
+  const sheetUrl = (s) => "sheets/sheet_" + String(s).padStart(2, "0") + ".png";
+  const loaded = new Set();
+  function preload(url) { if (!loaded.has(url)) { loaded.add(url); new Image().src = url; } }
+  // Show the square at (x0, y0) of a sheet sized w x h in an element that fills one pane.
+  function crop(el, url, w, h, x0, y0) {
+    el.style.backgroundImage = `url(${url})`;
+    el.style.backgroundSize = `${w / TILE * 100}% ${h / TILE * 100}%`;
+    el.style.backgroundPosition = `${w > TILE ? x0 / (w - TILE) * 100 : 0}% ${h > TILE ? y0 / (h - TILE) * 100 : 0}%`;
+  }
+  function cardPanes(bf, fl, url, w, h, x0, y0) {
+    crop(bf, url, w, h, x0, y0); crop(fl, url, w, h, x0 + TILE + GAP, y0);
+  }
+  $("examples").append(...GUIDE.map(([caption, v], k) => {
+    const ex = document.createElement("div"); ex.className = "ex";
+    const panes = document.createElement("div"); panes.className = "panes"; panes.setAttribute("role", "img"); panes.setAttribute("aria-label", caption);
+    const [a, b] = [0, 1].map(() => { const p = document.createElement("div"); p.className = "pane"; const i = document.createElement("i"); p.append(i); panes.append(p); return i; });
+    cardPanes(a, b, "sheets/guide.png", 2 * TILE + GAP, GUIDE.length * TILE, 0, k * TILE);
+    const p = document.createElement("p");
+    const chip = document.createElement("span"); chip.className = "chip " + v; chip.textContent = v === "keep" ? "Keep" : "Toss";
+    const t = document.createElement("span"); t.textContent = caption;
+    p.append(chip, t); ex.append(panes, p); return ex;
+  }));
+
+  const itemOf = (k) => parseInt(k, 10);
+  const bfOnly = (k) => k.endsWith("b");
+  function applyZoom() {
+    const f = (key() || "").replace(/^\d+/, "");
+    const sx = (f.includes("h") ? -1 : 1) * zoom, sy = (f.includes("v") ? -1 : 1) * zoom;
+    for (const id of ["paneBf", "paneFl"]) $(id).style.transform = `scale(${sx}, ${sy})`;
+    $("zoomReset").hidden = zoom === 1;
+    $("zoomReset").textContent = `${zoom.toFixed(1)}× · reset`;
+  }
+  function show(p) {
+    pos = p;
+    const k = key(), it = itemOf(k) - 1, s = Math.floor(it / PER_SHEET), j = it % PER_SHEET;
+    cardPanes($("paneBf"), $("paneFl"), sheetUrl(s), SHEET_W, SHEET_H, (j % COLS) * (2 * TILE + GAP), Math.floor(j / COLS) * TILE);
+    card.classList.toggle("single", bfOnly(k));
+    applyZoom();
+    $("itemNo").textContent = `#${pos + 1}`;
+    const v = votes[k]?.v;
+    $("was").textContent = v ? `You said ${WORD[v]}. Pick again to change it.` : "";
+    for (const w of ["keep", "toss", "unsure"]) $(w + "Btn").classList.toggle("on", v === w);
+    for (let a = 1; a <= 3; a++) if (pos + a < N) preload(sheetUrl(Math.floor((itemOf(DISPLAY[pos + a]) - 1) / PER_SHEET)));
+    render();
+    shownAt = performance.now();
+  }
+
+  const nDone = () => Object.keys(votes).length;
+  function firstUnanswered(from) {
+    for (let p = from; p < N; p++) if (!votes[DISPLAY[p]]) return p;
+    for (let p = 0; p < from; p++) if (!votes[DISPLAY[p]]) return p;
+    return null;
+  }
+  function render() {
+    const d = nDone(), s = $("score");
+    if (s.textContent !== String(d)) { s.textContent = d; s.classList.remove("bump"); void s.offsetWidth; s.classList.add("bump"); }
+    $("count").textContent = `of ${N}`;
+    $("barFill").style.width = (100 * d / Math.max(1, N)) + "%";
+    $("backBtn").disabled = pos <= 0;
+    $("fwdBtn").disabled = pos >= N - 1 || !votes[key()];   // no skipping past a card you haven't answered
+  }
+
+  // ---- saving: every answer is one new row in Supabase (setup.sql), sent at once ----
+  // Unsent rows wait in an outbox on this device and go as soon as there's a connection;
+  // each row carries its own id, so a row sent twice is stored once.
+  let sending = false;
+  function status(msg, warn) { $("status").textContent = msg; $("status").classList.toggle("warn", !!warn); }
+  function queueSave(row) {
+    local.set("votes", JSON.stringify(votes), true); local.set("name", name);
+    if (row) { outbox.push(row); local.set("outbox", JSON.stringify(outbox), true); local.set("seq", String(seq), true); }
+    flush();
+  }
+  async function flush() {
+    if (sending || !sb || !uid || refused || !outbox.length) return;
+    sending = true;
+    while (outbox.length) {
+      const batch = outbox.slice(0, 100);
+      let error;
+      try { ({ error } = await sb.from("okflow_answers").upsert(batch, { onConflict: "id", ignoreDuplicates: true })); }
+      catch (e) { error = { message: String(e) }; }
+      if (!error) {
+        outbox.splice(0, batch.length); local.set("outbox", JSON.stringify(outbox), true);
+        status(outbox.length ? `Saving… ${outbox.length} to go` : "Saved.");
+        continue;
+      }
+      if (/^(22|23|42)/.test(error.code || "")) {   // refused by the database's rules: retrying won't help
+        refused = true;
+        status("Your answers couldn't be saved online; they're kept on this device. Please tell Lucien.", true);
+        break;
+      }
+      status("Offline? Answers are kept on this device and will be sent when you're back.", true);
+      await new Promise((r) => { wake = r; setTimeout(r, 4000 + Math.random() * 2000); });
+      wake = null;
+    }
+    sending = false;
+  }
+  let wake = null;   // cuts the retry wait short when the device comes back online
+  window.addEventListener("online", () => (wake ? wake() : flush()));
+
+  // ---- screens, answering, moving ----
+  function screen(id) { for (const s of ["welcome", "guide", "boardPage", "labeller", "done"]) $(s).hidden = s !== id; }
+  function answer(v, ms) {
+    const k = key(), old = votes[k], before = nDone();
+    const prev = old ? [...(old.prev || []), { v: old.v, ms: old.ms, at: old.at }] : [];
+    const at = new Date().toISOString();
+    votes[k] = { v, ms: Math.round(ms), at, ...(prev.length ? { prev } : {}) };
+    queueSave({ id: crypto.randomUUID(), set_id: SET, name, card: k, answer: v, decide_ms: Math.round(ms), seq: ++seq, answered_at: at });
+    const next = firstUnanswered(pos + 1);
+    if (next === null) { finish(); return; }
+    show(next);
+    const d = nDone();
+    if (d > before && d % 50 === 0) milestone(d);
+  }
+  function goBack() {
+    if (!$("done").hidden) { screen("labeller"); show(N - 1); return; }
+    if (pos > 0) show(pos - 1);
+  }
+  function goForward() { if (pos < N - 1 && votes[key()]) show(pos + 1); }
+  function finish() {
+    render(); screen("done");
+    $("doneText").textContent = `${name ? name + ", you" : "You"} answered all ${N} cards. Your answers are saved.`;
+  }
+  function startLabelling() {
+    screen("labeller");
+    const p = firstUnanswered(0);
+    if (p === null) { finish(); return; }
+    show(p);
+    if (!uid) status("Not connected yet: answers are kept on this device and sent once connected.", true);
+  }
+
+  // ---- leaderboard: everyone's count of answered cards (setup.sql okflow_board) ----
+  async function loadBoard() {
+    if (!sb || !uid) return;
+    try {
+      const { data, error } = await sb.rpc("okflow_board", { p_set: SET });
+      if (!error && Array.isArray(data)) boardRows = data.map((r) => ({ name: r.name || "Someone", n: Number(r.cards) || 0, me: !!r.me }));
+    } catch {}
+  }
+  function rankRows() {
+    const rows = boardRows.map((r) => ({ ...r }));
+    let me = rows.find((r) => r.me);
+    if (!me && nDone()) { me = { name, me: true }; rows.push(me); }
+    if (me) { me.n = nDone(); me.name = name || me.name; }   // this device is ahead of the server
+    return rows.sort((a, b) => b.n - a.n);
+  }
+  function drawBoard() {
+    const ol = $("board"); ol.replaceChildren();
+    const rows = rankRows();
+    if (!rows.length) { const li = document.createElement("li"); li.textContent = "No one yet. Be the first!"; ol.append(li); return; }
+    for (const r of rows) {
+      const li = document.createElement("li"); if (r.me) li.className = "me";
+      const who = document.createElement("span"); who.className = "who"; who.textContent = r.name + (r.me ? " (you)" : "");
+      const n = document.createElement("span"); n.className = "n"; n.textContent = r.n;
+      li.append(who, n); ol.append(li);
+    }
+  }
+  let returnTo = "labeller";
+  function openBoard(from) { returnTo = from; drawBoard(); screen("boardPage"); loadBoard().then(() => { if (!$("boardPage").hidden) drawBoard(); }); }
+  $("boardBtn").addEventListener("click", () => openBoard("labeller"));
+  $("doneBoard").addEventListener("click", () => openBoard("done"));
+  $("boardBack").addEventListener("click", () => screen(returnTo));
+  $("boardBack").textContent = "Back";
+
+  // ---- milestone: every 50 cards, a 10-second break with cells flowing past ----
+  let flowAnim = 0;
+  function milestone(d) {
+    const cheer = CHEERS[(d / 50 - 1) % CHEERS.length];
+    $("mN").textContent = d; $("mTitle").textContent = cheer;
+    const rankText = () => {
+      const rows = rankRows(), rank = rows.findIndex((r) => r.me) + 1;
+      $("mText").textContent = (rank && rows.length > 1 ? `You're #${rank} of ${rows.length} on the leaderboard. ` : "") + `${N - d} cards to go. Take a breath.`;
+    };
+    rankText(); loadBoard().then(rankText);
+    $("milestone").hidden = false;
+    try { navigator.vibrate?.([60, 40, 60]); } catch {}
+    const go = $("mGo"); go.disabled = true;
+    let left = 10; go.textContent = `Keep going in ${left}`;
+    const tick = setInterval(() => {
+      left -= 1;
+      if (left <= 0) { clearInterval(tick); go.disabled = false; go.textContent = "Keep going"; go.focus(); }
+      else go.textContent = `Keep going in ${left}`;
+    }, 1000);
+    startFlow();
+  }
+  $("mGo").addEventListener("click", () => { $("milestone").hidden = true; cancelAnimationFrame(flowAnim); });
+  function startFlow() {
+    const cv = $("flow"), ctx = cv.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = cv.clientWidth * dpr; cv.height = cv.clientHeight * dpr;
+    const css = getComputedStyle(document.documentElement);
+    const colors = [css.getPropertyValue("--keep"), css.getPropertyValue("--toss"), css.getPropertyValue("--unsure")];
+    const cells = Array.from({ length: 26 }, () => ({
+      x: Math.random() * cv.width, y: Math.random() * cv.height, r: (10 + Math.random() * 18) * dpr,
+      v: (0.6 + Math.random() * 1.6) * dpr, blur: Math.random() < 0.3, c: colors[Math.floor(Math.random() * 3)],
+    }));
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const draw = () => {
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      for (const c of cells) {
+        if (!still) { c.y -= c.v; if (c.y < -c.r * 2) { c.y = cv.height + c.r * 2; c.x = Math.random() * cv.width; } }
+        ctx.globalAlpha = 0.35; ctx.filter = c.blur ? `blur(${4 * dpr}px)` : "none";
+        ctx.strokeStyle = c.c; ctx.lineWidth = 3 * dpr;
+        ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = c.c; ctx.beginPath(); ctx.arc(c.x - c.r * 0.15, c.y, c.r * 0.35, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.filter = "none"; ctx.globalAlpha = 1;
+      if (!still && !$("milestone").hidden) flowAnim = requestAnimationFrame(draw);
+    };
+    draw();
+  }
+
+  // ---- the swipe, pinch zoom and wheel zoom ----
+  const pts = new Map();
+  let x0 = null, y0 = 0, dx = 0, dy = 0, t0 = 0, pinch = null, lastTap = 0;
+  const isUp = () => -dy > Math.abs(dx);
+  const setZoom = (z) => { zoom = Math.min(4, Math.max(1, z)); applyZoom(); };
+  const dist = () => { const [a, b] = [...pts.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+  card.addEventListener("pointerdown", (e) => {
+    if (e.target.id === "zoomReset") return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    card.setPointerCapture(e.pointerId);
+    if (pts.size === 2) { pinch = { d: dist(), z: zoom }; x0 = null; card.style.transform = ""; resetStamps(); return; }
+    if (pts.size > 2 || pinch) return;
+    x0 = e.clientX; y0 = e.clientY; dx = 0; dy = 0; t0 = performance.now();
+    card.classList.remove("settle", "fly");
+  });
+  card.addEventListener("pointermove", (e) => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch && pts.size === 2) { setZoom(pinch.z * dist() / pinch.d); return; }
+    if (x0 === null) return;
+    dx = e.clientX - x0; dy = Math.min(0, e.clientY - y0);
+    const up = isUp(), op = (d) => Math.max(0, Math.min(1, d / 90));
+    card.style.transform = up ? `translateY(${dy}px)` : `translateX(${dx}px) rotate(${dx / 18}deg)`;
+    $("stampKeep").style.opacity = up ? 0 : op(dx);
+    $("stampToss").style.opacity = up ? 0 : op(-dx);
+    $("stampUnsure").style.opacity = up ? op(-dy) : 0;
+  });
+  function release(e) {
+    pts.delete(e.pointerId);
+    if (pinch) { if (pts.size === 0) pinch = null; return; }
+    if (x0 === null) return;
+    const up = isUp(), d = up ? -dy : Math.abs(dx);
+    const dt = performance.now() - t0, speed = d / Math.max(1, dt);
+    x0 = null;
+    if (d > 90 || (d > 30 && speed > 0.6)) { fly(up ? "unsure" : dx > 0 ? "keep" : "toss"); return; }
+    card.classList.add("settle"); card.style.transform = ""; resetStamps();
+    if (d < 6 && dt < 300) {   // a double tap resets the zoom
+      if (performance.now() - lastTap < 350) setZoom(1);
+      lastTap = performance.now();
+    }
+  }
+  card.addEventListener("pointerup", release);
+  card.addEventListener("pointercancel", release);
+  card.addEventListener("wheel", (e) => { e.preventDefault(); setZoom(zoom * (e.deltaY < 0 ? 1.15 : 1 / 1.15)); }, { passive: false });
+  $("zoomReset").addEventListener("click", () => setZoom(1));
+  function resetStamps() { for (const id of ["stampKeep", "stampToss", "stampUnsure"]) $(id).style.opacity = 0; }
+  let flying = false;
+  function fly(v) {
+    if (flying || !$("milestone").hidden) return;
+    const ms = performance.now() - shownAt;   // from the card appearing to the decision
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) { card.style.transform = ""; resetStamps(); answer(v, ms); return; }
+    flying = true;
+    card.classList.add("fly");
+    card.style.transform = v === "unsure" ? `translateY(${-window.innerHeight}px)`
+      : `translateX(${(v === "keep" ? 1 : -1) * window.innerWidth}px) rotate(${v === "keep" ? 20 : -20}deg)`;
+    card.style.opacity = "0";
+    setTimeout(() => {
+      card.classList.remove("fly"); card.style.transform = ""; card.style.opacity = ""; resetStamps();
+      flying = false; answer(v, ms);
+    }, 230);
+  }
+  $("keepBtn").addEventListener("click", () => fly("keep"));
+  $("tossBtn").addEventListener("click", () => fly("toss"));
+  $("unsureBtn").addEventListener("click", () => fly("unsure"));
+  $("backBtn").addEventListener("click", goBack);
+  $("fwdBtn").addEventListener("click", goForward);
+  $("reviewBtn").addEventListener("click", goBack);
+  $("guideBtn").addEventListener("click", () => { $("beginBtn").textContent = "Back to labelling"; screen("guide"); });
+  $("beginBtn").addEventListener("click", startLabelling);
+  document.addEventListener("keydown", (e) => {
+    if ($("labeller").hidden || e.target.tagName === "INPUT" || !$("milestone").hidden) return;
+    const k = { ArrowRight: () => fly("keep"), ArrowLeft: () => fly("toss"), ArrowUp: () => fly("unsure"),
+                Backspace: goBack, ArrowDown: goForward, "+": () => setZoom(zoom * 1.25), "=": () => setZoom(zoom * 1.25),
+                "-": () => setZoom(zoom / 1.25), "0": () => setZoom(1) }[e.key];
+    if (k) { e.preventDefault(); k(); }
+  });
+
+  // ---- start: name, then the examples, then labelling ----
+  $("nameForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    name = $("who").value.trim();
+    if (!name) return;
+    local.set("name", name);
+    screen("guide");
+  });
+  $("beginBtn").disabled = true;
+  fetch("cards.json").then((r) => r.json()).then((o) => {
+    SET = o.set_id; DISPLAY = o.display; N = DISPLAY.length;
+    votes = readJSON("votes", {}); outbox = readJSON("outbox", []); seq = Number(local.get("seq", true)) || 0;
+    $("beginBtn").disabled = false;
+    preload(sheetUrl(Math.floor((itemOf(DISPLAY[0]) - 1) / PER_SHEET)));
+    connect();
+  }).catch(() => { $("welcomeStatus").textContent = "Couldn't load the cell list. Reload the page to try again."; });
+  preload("sheets/guide.png");
+
+  // ---- connect to Supabase (config.js) with an anonymous sign-in kept on this device ----
+  let connectWait = 5000;
+  async function connect() {
+    const cfg = window.OKFLOW || {};
+    if (!cfg.supabaseUrl || !cfg.supabaseKey || !window.supabase) {
+      $("welcomeStatus").textContent = "Not connected to the answer store: answers stay on this device.";
+      return;
+    }
+    try {
+      sb = sb || window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, { auth: { storageKey: "okflow-auth", persistSession: true, autoRefreshToken: true } });
+      let { data: { session } } = await sb.auth.getSession();
+      if (!session) {
+        const { data, error } = await sb.auth.signInAnonymously();
+        if (error) throw error;
+        session = data.session;
+      }
+      uid = session.user.id;
+    } catch {
+      uid = null;
+      setTimeout(connect, connectWait); connectWait = Math.min(60000, connectWait * 2);
+      return;
+    }
+    if (!$("labeller").hidden) status(outbox.length ? "" : "Connected.");
+    flush(); loadBoard();
+  }
+})();
+</script>
+</body>
+</html>
