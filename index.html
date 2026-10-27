@@ -425,7 +425,8 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   $("who").value = name;
 
   // ---- images ----
-  const sheetUrl = (s) => "sheets/sheet_" + String(s).padStart(2, "0") + ".png";
+  let SHEET_V = {};   // sheets redrawn since they were first published, with their version (cards.json)
+  const sheetUrl = (s) => "sheets/sheet_" + String(s).padStart(2, "0") + ".png" + (SHEET_V[s] ? "?v=" + SHEET_V[s] : "");
   const loaded = new Set();
   function preload(url) { if (!loaded.has(url)) { loaded.add(url); new Image().src = url; } }
   // Show the square at (x0, y0) of a sheet sized w x h in an element that fills one pane.
@@ -984,7 +985,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     return placed.sort((x, y) => x[0] - y[0]).map(([, k]) => k);
   }
   fetch("cards.json").then((r) => r.json()).then((o) => {
-    SET = o.set_id; BASE = o.cells ? layout(o) : o.display;
+    SET = o.set_id; BASE = o.cells ? layout(o) : o.display; SHEET_V = o.sheet_v || {};
     votes = readJSON("votes", {}); outbox = readJSON("outbox", []); seq = Number(local.get("seq", true)) || 0;
     DISPLAY = BASE.concat(readJSON("bonus", [])); N = DISPLAY.length;
     welcomeBack();
