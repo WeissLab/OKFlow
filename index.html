@@ -248,6 +248,22 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
 .texamples .ex { grid-template-columns: 50% 1fr; }
 .was.look { color: var(--toss); font-weight: 700; }
 .mbox .big-n { font-family: var(--display); font-weight: 800; font-size: 4rem; line-height: 1; font-variant-numeric: tabular-nums; }
+/* the tutorial and practice mode run on the labelling screen, with a lesson box in place of the top bar */
+.labeller.coaching .top { display: none; }
+.coach { display: flex; flex-direction: column; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; font-size: 0.95rem; line-height: 1.35; }
+.coach-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.coach .fb { font-weight: 700; }
+.coach .fb.ok { color: var(--keep); } .coach .fb.no { color: var(--toss); }
+.labeller.result .actions, .labeller.result .swipehint { display: none; }
+.labeller.coaching .card { max-width: calc((100dvh - 360px) * 2.1); }
+.labeller.coaching .card.single { width: calc(min(100%, (100dvh - 360px) * 2.1) / 2 + 8px); }
+@media (hover: hover) and (pointer: fine) {
+  .labeller.coaching .card { max-width: calc((100dvh - 450px) * 2.1); }
+  .labeller.coaching .card.single { width: calc(min(100%, (100dvh - 450px) * 2.1) / 2 + 8px); }
+}
+/* the brightfield is what's judged: marked in the tutorial and on a labeller's first cards */
+.card.judge .pane:first-child { outline: 3px solid #ffd84d; outline-offset: -3px; }
+.card.judge #legBf { color: #ffd84d; font-weight: 700; }
 @media (prefers-reduced-motion: reduce) { .card.fly, .card.settle, .bar > i { transition: none; } .score-n.bump { animation: none; } }
 </style>
 </head>
@@ -286,6 +302,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   <section class="page" id="guide" hidden>
     <h1 id="guideTitle">Instructions</h1>
     <p class="note keepnote" id="guideBack" hidden></p>
+    <p class="muted small">New here, or want a recap? <button class="linkish" type="button" id="replayTut">Take the one-minute tutorial</button></p>
     <p class="note keepnote"><strong>Base your answer on the brightfield</strong> (the grey image on the left). When the fluorescence image is shown too, use it as an extra guide, for example to tell one cell from two, or a cell from a bead or debris. Fluorescence often looks soft even when the cell is sharp.</p>
     <div class="note keynote desktop-only">
       <div class="keypad" aria-hidden="true"><kbd class="k-up">↑</kbd><kbd class="k-left">←</kbd><kbd class="k-right">→</kbd></div>
@@ -318,14 +335,20 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       <div class="progress">
         <div class="score"><span class="score-label">Cellcount</span><span class="score-n" id="score">0</span></div>
         <div class="bar"><i id="barFill"></i></div>
-        <span class="count"><button class="linkish" id="guideBtn" type="button">instructions</button> · <button class="linkish" id="boardBtn" type="button">leaderboard</button> · <button class="linkish" id="deviceBtn" type="button">switch device</button> · <button class="linkish" id="themeBtn2" type="button">dark</button></span>
+        <span class="count"><button class="linkish" id="guideBtn" type="button">instructions</button> · <button class="linkish" id="quizBtn" type="button">practice</button> · <button class="linkish" id="boardBtn" type="button">leaderboard</button> · <button class="linkish" id="deviceBtn" type="button">switch device</button> · <button class="linkish" id="themeBtn2" type="button">dark</button></span>
       </div>
       <button class="nav" id="fwdBtn" type="button">Forward →</button>
+    </div>
+    <div class="coach" id="coach" hidden>
+      <div class="coach-head"><span class="score-label" id="coachStep">Tutorial</span><button class="linkish" id="coachLeave" type="button" hidden>leave practice</button></div>
+      <div class="bar"><i id="coachBar"></i></div>
+      <p id="coachText"></p>
+      <p class="fb" id="coachFb" hidden></p>
     </div>
     <div class="stage">
       <div class="card" id="card">
         <div class="panes"><div class="pane"><i id="paneBf"></i></div><div class="pane"><i id="paneFl"></i></div></div>
-        <div class="legend"><span>Brightfield</span><span>Fluorescence</span></div>
+        <div class="legend"><span id="legBf">Brightfield</span><span id="legFl">Fluorescence</span></div>
         <button class="zoomed" id="zoomReset" type="button" hidden>1×</button>
         <span class="stamp keep" id="stampKeep">KEEP</span>
         <span class="stamp toss" id="stampToss">REJECT</span>
@@ -338,6 +361,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       <button class="big unsure" id="unsureBtn" type="button"><kbd>↑</kbd> Not sure</button>
       <button class="big keep" id="keepBtn" type="button">Keep <kbd>→</kbd></button>
     </div>
+    <button class="go" type="button" id="coachNext" hidden><span class="lbl">Next</span> <kbd class="mouseonly">Enter</kbd></button>
     <p class="swipehint"><span class="toss">← reject</span><span class="unsure">↑ not sure</span><span class="keep">keep →</span></p>
     <p class="status" id="status"></p>
     <p class="keys"><span class="keys-title">⌨ Keyboard shortcuts</span> <kbd>→</kbd> keep <kbd>←</kbd> reject <kbd>↑</kbd> not sure <kbd>Return</kbd> back <kbd>↓</kbd> forward <kbd>P</kbd> pause <kbd>I</kbd> instructions <kbd>+</kbd><kbd>−</kbd> zoom</p>
@@ -361,12 +385,22 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     <button type="button" id="reviewBtn"><span class="lbl">Back to the last cell</span> <kbd class="mouseonly">Return</kbd></button>
   </section>
 
+  <section class="done" id="coachEnd" hidden>
+    <p class="score-label" id="ceKicker">Tutorial</p>
+    <h1 id="ceTitle">Tutorial done!</h1>
+    <div class="stats"><p class="big-n" id="ceScore">–</p><p class="muted" id="ceScoreText"></p></div>
+    <p class="note keepnote" id="ceText"></p>
+    <button class="go" type="button" id="ceGo"><span class="lbl">Start labelling</span> <kbd class="mouseonly">Enter</kbd></button>
+    <button type="button" id="ceAgain"><span class="lbl">Replay the tutorial</span> <kbd class="mouseonly">R</kbd></button>
+  </section>
+
   <section class="done" id="paused" hidden>
     <h1 id="pausedTitle">Paused</h1>
     <p class="muted" id="pausedText"></p>
     <ol class="board mini" id="pBoard" aria-label="Leaderboard" hidden style="margin-inline: auto"></ol>
     <button class="go" type="button" id="resumeBtn"><span class="lbl">Resume</span> <kbd class="mouseonly">Enter</kbd></button>
     <button type="button" id="pausedGuide"><span class="lbl">Instructions</span> <kbd class="mouseonly">I</kbd></button>
+    <button type="button" id="pausedQuiz"><span class="lbl">Practise with a score</span> <kbd class="mouseonly">S</kbd></button>
     <button type="button" id="pausedBoard"><span class="lbl">See the leaderboard</span> <kbd class="mouseonly">L</kbd></button>
     <button type="button" class="shareBtn">Share OKFlow</button>
     <p class="muted small shareAlt" hidden><a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fokflow.weisslab.ca%2F" target="_blank" rel="noopener">Share on Facebook</a> · <button class="linkish copyLink" type="button">Copy link</button></p>
@@ -463,7 +497,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   let signupOut = (() => { try { return JSON.parse(local.get("signup_out") || "null"); } catch { return null; } })();
   let BASE = [], DISPLAY = [], N = 0;   // BASE: the set's cards (two showings per cell); DISPLAY adds any bonus round
   const ORIENTS = ["", "h", "v", "hv"];
-  let pos = 0, shownAt = performance.now(), zoom = 1;
+  let pos = 0, shownAt = performance.now(), zoom = 1, flip = "";   // flip: the shown card's orientation
   let sb = null, uid = null, refused = false, boardRows = [];
   const readJSON = (k, fallback) => { try { return JSON.parse(local.get(k, true) || "null") ?? fallback; } catch { return fallback; } };
   // Practice cards (cards.json "practice": cells with a known answer, in three levels) sit in DISPLAY as
@@ -525,9 +559,9 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   const itemOf = (k) => parseInt(k, 10);
   const bfOnly = (k) => k.endsWith("b");
   function applyZoom() {
-    const f = (key() || "").replace(/^\d+/, "");
-    const sx = (f.includes("h") ? -1 : 1) * zoom, sy = (f.includes("v") ? -1 : 1) * zoom;
+    const sx = (flip.includes("h") ? -1 : 1) * zoom, sy = (flip.includes("v") ? -1 : 1) * zoom;
     for (const id of ["paneBf", "paneFl"]) $(id).style.transform = `scale(${sx}, ${sy})`;
+    for (const n of card.querySelectorAll(".notes")) n.style.display = zoom === 1 ? "" : "none";   // arrows fit only 1x
     $("zoomReset").hidden = zoom === 1;
     $("zoomReset").textContent = `${zoom.toFixed(1)}× · reset`;
   }
@@ -537,11 +571,9 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       slots[DISPLAY[p].slice(2)] = pickPractice(DISPLAY[p][1]);
       local.set("slots", JSON.stringify(slots), true);
     }
-    const k = key(), it = itemOf(k) - 1, s = Math.floor(it / PER_SHEET), j = it % PER_SHEET;
+    const k = key();
     if (introduce(k)) return;
-    cardPanes($("paneBf"), $("paneFl"), sheetUrl(s), SHEET_W, SHEET_H, (j % COLS) * (2 * TILE + GAP), Math.floor(j / COLS) * TILE);
-    card.classList.toggle("single", bfOnly(k));
-    applyZoom();
+    paint({ k }); setNotes(null); judge(nDone() < JUDGE_N);
     const v = votes[k]?.v;
     $("was").textContent = v ? `You said ${WORD[v]}. Pick again to change it.` : "";
     for (const w of ["keep", "toss", "unsure"]) $(w + "Btn").classList.toggle("on", v === w);
@@ -549,6 +581,28 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     for (let a = 1; a <= 3; a++) if (pos + a < N && cardAt(pos + a)) preload(sheetUrl(Math.floor((itemOf(cardAt(pos + a)) - 1) / PER_SHEET)));
     render();
     shownAt = performance.now();
+  }
+
+  // A card of the set (k), or a row of the examples sheet (g), in the two panes, unzoomed.
+  function paint(c) {
+    if (c.g !== undefined) cardPanes($("paneBf"), $("paneFl"), "sheets/guide.png", 2 * TILE + GAP, GUIDE.length * TILE, 0, c.g * TILE);
+    else {
+      const it = itemOf(c.k) - 1, s = Math.floor(it / PER_SHEET), j = it % PER_SHEET;
+      cardPanes($("paneBf"), $("paneFl"), sheetUrl(s), SHEET_W, SHEET_H, (j % COLS) * (2 * TILE + GAP), Math.floor(j / COLS) * TILE);
+    }
+    card.classList.toggle("single", c.k ? bfOnly(c.k) : !!c.single);
+    flip = c.k ? c.k.replace(/^\d+/, "") : ""; zoom = 1; applyZoom();
+  }
+  function setNotes(notes) {
+    for (const n of card.querySelectorAll(".notes")) n.remove();
+    if (notes) $("paneBf").parentElement.append(noteSvg(notes));
+  }
+  // "Judge this one" on the brightfield, in the tutorial and on a labeller's first JUDGE_N cards
+  const JUDGE_N = 30;
+  function judge(on) {
+    card.classList.toggle("judge", on);
+    $("legBf").textContent = on ? "▲ Judge this one" : "Brightfield";
+    $("legFl").textContent = on ? "Fluorescence: a guide" : "Fluorescence";
   }
 
   const nDone = () => Object.keys(votes).length;
@@ -563,7 +617,9 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     const lv = kind === "a" ? 1 : prac.level;
     const used = Object.values(slots), uses = (i) => used.filter((k) => itemOf(k) === i).length;
     const want = Math.random() < 0.5 ? "keep" : "toss";   // half keep, half reject, whatever the level
-    let pool = LEVELS[lv].filter((i) => PRACTICE[i].v === want);
+    const known = new Set([...TUT_ITEMS, ...readJSON("quiz_seen", [])]);   // answers this device has been shown
+    let pool = LEVELS[lv].filter((i) => PRACTICE[i].v === want && !known.has(i));
+    if (!pool.length) pool = LEVELS[lv].filter((i) => PRACTICE[i].v === want);
     if (!pool.length) pool = LEVELS[lv];
     const least = Math.min(...pool.map(uses));
     const cands = pool.filter((i) => uses(i) === least), i = cands[Math.floor(Math.random() * cands.length)];
@@ -624,6 +680,158 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     }
     return out;
   }
+
+  // ---- the tutorial: a first-time labeller's first cards, one lesson each, from the examples sheet (g: its row)
+  // and two easy practice cells (k). The first two say what to do; the rest ask, then say why, and a wrong answer
+  // gets another try. The score is how many were right on the first try, of those that ask. Nothing is saved. ----
+  const TOUCH = matchMedia("(pointer: coarse)").matches;
+  const HOW = TOUCH ? { keep: "Swipe right", toss: "Swipe left", unsure: "Swipe up" } : { keep: "Press →", toss: "Press ←", unsure: "Press ↑" };
+  const TUT_ITEMS = [399, 736];
+  const TUTORIAL = [
+    { g: 0, single: true, v: "keep", told: true, notes: [[24, 37, 12, 20, "crisp edge"]],
+      ask: "This grey picture is the brightfield. It's the one you judge. This cell is sharp: its edge is crisp. {keep} to keep it.",
+      right: "That's a keeper." },
+    { g: 2, single: true, v: "toss", told: true, notes: [[21, 40, 12, 20, "soft edge"]],
+      ask: "This one is out of focus: its edge is soft and hazy. {toss} to reject it.",
+      right: "Blurry cells are rejected." },
+    { g: 1, v: "keep", notes: [[21, 40, 8, 18, "crisp edge"]],
+      ask: "Now the fluorescence shows on the right. It often looks soft even when the cell is sharp, so judge the grey brightfield. Keep or reject?",
+      right: "The brightfield is sharp, so it's a keeper, even though the fluorescence is soft.",
+      wrong: "Judge the grey brightfield: its edge is crisp, so this one is a keeper." },
+    { g: 3, v: "toss", notes: [[33, 42, 16, 62, "streaks"]], ask: "Your call.",
+      right: "Those streaks mean the cell moved while it was imaged.",
+      wrong: "See the streaks across the cell? It moved while it was imaged, so reject it." },
+    { g: 5, v: "toss", notes: [[56, 38, 68, 20, "cut off"]], ask: "Your call. Check the whole cell, right up to the edges of the image.",
+      right: "It's sharp, but part of it runs off the edge. Cut off means reject.",
+      wrong: "It's sharp, but part of it runs off the edge of the image. Cut off means reject, even when it's sharp." },
+    { k: "399", v: "keep", ask: "Your call.",
+      right: "Sharp, whole and on its own: a keeper.",
+      wrong: "This one is sharp, whole and on its own: a keeper." },
+    { g: 6, v: "toss", notes: [[61, 40, 70, 20, "cut off"]], ask: "Your call.",
+      right: "Even a sliver off the edge counts as cut off.",
+      wrong: "Look at the right edge: a sliver of the cell is cut off. Even a sliver means reject." },
+    { g: 9, v: "toss", notes: [[44, 42, 60, 14, "small, dark"]], ask: "Your call.",
+      right: "That's a bead or a dead cell: small, dark and smooth.",
+      wrong: "This is a bead or a dead cell, not a living cell: small, dark and smooth. Reject it." },
+    { k: "736b", v: "keep", ask: "Last one. Your call.",
+      right: "You're ready!",
+      wrong: "Sharp, whole and single: a keeper." },
+  ];
+  // ---- practice mode: 20 cells with a known answer (cards.json "practice"), easy to hard, each followed by the
+  // lab's call and a running score. Nothing is saved as a label; the cells shown are remembered on this device
+  // (quiz_seen) so its practice slots use others. ----
+  const QUIZ = { 1: 6, 2: 7, 3: 7 };
+  const REASON = { sharp: "a sharp, whole single cell", blur: "out of focus", "cut off": "cut off at the edge", bead: "a bead",
+    dead: "a dead cell", debris: "debris", clump: "a clump of cells" };
+  const LEVEL = { 1: "Easy", 2: "Medium", 3: "Hard" };
+  let coach = null;   // the tutorial or practice mode while it runs
+  function startCoach(kind, cards) {
+    coach = { kind, cards, i: 0, first: [], phase: "ask", at: 0 };
+    screen("labeller"); $("labeller").classList.add("coaching"); $("coach").hidden = false;
+    $("coachLeave").hidden = kind !== "quiz";
+    coachShow();
+  }
+  function stopCoach() {
+    coach = null; $("labeller").classList.remove("coaching", "result"); $("coach").hidden = $("coachNext").hidden = true;
+    setNotes(null); resetStamps();
+  }
+  const nRight = () => coach.first.filter(Boolean).length;
+  function coachStep() {
+    const n = coach.cards.length;
+    $("coachStep").textContent = coach.kind === "tutorial" ? `Tutorial · ${coach.i + 1} of ${n}` : `Practice · ${coach.i + 1} of ${n} · ${nRight()} right`;
+  }
+  function coachShow() {
+    const c = coach.cards[coach.i];
+    coach.phase = "ask";
+    $("labeller").classList.remove("result"); $("coachNext").hidden = true;
+    paint(c); setNotes(c.told ? c.notes : null); judge(coach.kind === "tutorial" || nDone() < JUDGE_N); resetStamps();
+    coachStep(); $("coachBar").style.width = (100 * coach.i / coach.cards.length) + "%";
+    $("coachText").textContent = c.ask; $("coachFb").hidden = true;
+    for (const w of ["keep", "toss", "unsure"]) $(w + "Btn").classList.remove("on");
+    $("was").textContent = ""; status("");
+    shownAt = performance.now();
+  }
+  function coachAnswer(v) {
+    const c = coach.cards[coach.i], ok = v === c.v, fb = $("coachFb");
+    if (coach.first[coach.i] === undefined) coach.first[coach.i] = ok;
+    fb.hidden = false; fb.className = "fb " + (ok ? "ok" : "no");
+    if (coach.kind === "tutorial" && !ok) {   // the same card again, with a pointer
+      fb.textContent = v === "unsure" ? "Not sure is for cells you really can't decide. This one has a clear answer: have another look."
+        : `Not quite. ${c.wrong || c.ask} Try again.`;
+      paint(c); setNotes(c.notes); shownAt = performance.now();
+      return;
+    }
+    fb.textContent = coach.kind === "tutorial" ? `Right! ${c.right}`
+      : `${ok ? "Right!" : "Not this time."} The lab's call: ${WORD[c.v]} (${REASON[c.why] || c.why}).`;
+    coach.phase = "result"; coach.at = performance.now();
+    paint(c); setNotes(c.notes);
+    $(c.v === "keep" ? "stampKeep" : "stampToss").style.opacity = 1;
+    $("labeller").classList.add("result"); $("coachNext").hidden = false; $("coachNext").focus();
+    coachStep(); $("coachBar").style.width = (100 * (coach.i + 1) / coach.cards.length) + "%";
+  }
+  function coachNext() {
+    if (!coach || coach.phase !== "result" || performance.now() - coach.at < 700) return;   // a moment to read the answer
+    if (++coach.i < coach.cards.length) coachShow(); else coachEnd();
+  }
+  let lastCoach = "tutorial";
+  function coachEnd() {
+    const { kind, cards, first } = coach, asked = cards.map((c, i) => ({ c, ok: first[i] })).filter((r) => !r.c.told);
+    const right = asked.filter((r) => r.ok).length;
+    lastCoach = kind; stopCoach(); screen("coachEnd");
+    $("ceScore").textContent = `${right} / ${asked.length}`;
+    $("ceAgain").querySelector(".lbl").textContent = kind === "tutorial" ? "Replay the tutorial" : "Practise again";
+    if (kind === "tutorial") {
+      local.set("tutorial", "done");
+      $("ceKicker").textContent = "Tutorial";
+      $("ceTitle").textContent = right === asked.length ? "Perfect! You're ready." : "Tutorial done!";
+      $("ceScoreText").textContent = "right on the first try";
+      $("ceText").textContent = "Remember: judge the grey brightfield. Keep a single, whole cell that's sharp. Reject anything blurry, " +
+        `streaked, cut off, two cells, a bead or debris. Really can't decide? ${HOW.unsure} for not sure.`;
+      $("ceGo").querySelector(".lbl").textContent = nDone() ? "Back to labelling" : "Start labelling";
+    } else {
+      const best = Math.max(right, Number(local.get("quiz_best", true)) || 0);
+      local.set("quiz_best", String(best), true);
+      $("ceKicker").textContent = "Practice";
+      $("ceTitle").textContent = right >= 0.9 * asked.length ? "Sharp eye!" : "Practice done";
+      $("ceScoreText").textContent = "right. " + [1, 2, 3].map((lv) => {
+        const g = asked.filter((r) => r.c.lv === lv);
+        return `${LEVEL[lv]} ${g.filter((r) => r.ok).length} of ${g.length}`;
+      }).join(" · ") + (best > right ? `. Your best: ${best}.` : ".");
+      $("ceText").textContent = "Hard ones are cells that careful labellers sometimes answer differently, so don't worry about those. " +
+        "Practice answers aren't saved as labels.";
+      $("ceGo").querySelector(".lbl").textContent = "Back to labelling";
+    }
+  }
+  function startTutorial() {
+    startCoach("tutorial", TUTORIAL.map((c) => ({ ...c, ask: c.ask.replace("{keep}", HOW.keep).replace("{toss}", HOW.toss) })));
+  }
+  function startQuiz() {
+    if (!Object.keys(PRACTICE).length) return;
+    const seen = readJSON("quiz_seen", []), times = (i) => seen.filter((x) => x === i).length, cards = [];
+    const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+    for (const lv of [1, 2, 3]) {
+      const n = QUIZ[lv], nKeep = Math.random() < 0.5 ? Math.floor(n / 2) : Math.ceil(n / 2), picked = [];
+      for (const [want, m] of [["keep", nKeep], ["toss", n - nKeep]]) {   // the cells shown least so far, in random order
+        const pool = shuffle(LEVELS[lv].filter((i) => PRACTICE[i].v === want && !TUT_ITEMS.includes(i)));
+        picked.push(...pool.sort((a, b) => times(a) - times(b)).slice(0, m));
+      }
+      for (const i of shuffle(picked)) {
+        const k = `${i}${ORIENTS[Math.floor(Math.random() * 4)]}${Math.random() < 0.5 ? "b" : ""}`;
+        cards.push({ k, v: PRACTICE[i].v, lv, why: PRACTICE[i].why, ask: `${LEVEL[lv]}.` + (lv === 3 ? " Careful labellers sometimes split on these." : "") });
+      }
+    }
+    cards[0].ask = "Twenty cells the lab has already sorted, from easy to hard. After each one you'll see the lab's call. " +
+      "Practice answers aren't saved as labels. " + cards[0].ask;
+    local.set("quiz_seen", JSON.stringify(seen.concat(cards.map((c) => itemOf(c.k)))), true);
+    startCoach("quiz", cards);
+  }
+  $("coachNext").addEventListener("click", () => coachNext());
+  $("coachLeave").addEventListener("click", () => { stopCoach(); screen("labeller"); show(pos); });
+  $("ceGo").addEventListener("click", () => { if (lastCoach === "tutorial") startLabelling(); else { screen("labeller"); show(pos); } });
+  $("ceAgain").addEventListener("click", () => (lastCoach === "tutorial" ? startTutorial() : startQuiz()));
+  $("replayTut").addEventListener("click", startTutorial);
+  $("quizBtn").addEventListener("click", startQuiz);
+  $("pausedQuiz").addEventListener("click", startQuiz);
 
   // ---- a new kind of cell: what it is and a fun fact, the first time this device meets one; then one more
   // fact about the cells just labelled on each break that doesn't show stats ----
@@ -777,8 +985,9 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   window.addEventListener("online", () => (wake ? wake() : flush()));
 
   // ---- screens, answering, moving ----
-  function screen(id) { for (const s of ["welcome", "guide", "boardPage", "devicePage", "labeller", "done", "paused"]) $(s).hidden = s !== id; }
+  function screen(id) { for (const s of ["welcome", "guide", "boardPage", "devicePage", "labeller", "done", "paused", "coachEnd"]) $(s).hidden = s !== id; }
   function answer(v, ms) {
+    if (coach) { coachAnswer(v); return; }   // tutorial and practice answers are never saved
     const k = key(), old = votes[k], before = nDone();
     const prev = old ? [...(old.prev || []), { v: old.v, ms: old.ms, at: old.at }] : [];
     const at = new Date().toISOString();
@@ -1172,6 +1381,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     if (pinch && pts.size === 2) { setZoom(pinch.z * dist() / pinch.d); return; }
     if (x0 === null) return;
     dx = e.clientX - x0; dy = Math.min(0, e.clientY - y0);
+    if (coach?.phase === "result") return;   // a swipe on a shown answer just moves on (fly)
     const up = isUp(), op = (d) => Math.max(0, Math.min(1, d / 90));
     card.style.transform = up ? `translateY(${dy}px)` : `translateX(${dx}px) rotate(${dx / 18}deg)`;
     $("stampKeep").style.opacity = up ? 0 : op(dx);
@@ -1200,6 +1410,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   let flying = false;
   function fly(v) {
     if (flying || !$("milestone").hidden || !$("typeIntro").hidden) return;
+    if (coach?.phase === "result") { coachNext(); return; }
     const ms = performance.now() - shownAt;   // from the card appearing to the decision
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) { card.style.transform = ""; resetStamps(); answer(v, ms); return; }
     flying = true;
@@ -1228,7 +1439,8 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     guide: { Enter: press("beginBtn") },
     boardPage: { Enter: press("boardBack"), Escape: press("boardBack") },
     devicePage: { Enter: press("deviceBack"), Escape: press("deviceBack") },
-    paused: { Enter: press("resumeBtn"), " ": press("resumeBtn"), i: press("pausedGuide"), l: press("pausedBoard") },
+    paused: { Enter: press("resumeBtn"), " ": press("resumeBtn"), i: press("pausedGuide"), l: press("pausedBoard"), s: press("pausedQuiz") },
+    coachEnd: { Enter: press("ceGo"), r: press("ceAgain") },
     done: { b: press("bonusBtn"), l: press("doneBoard"), Enter: press("reviewBtn"), Backspace: press("reviewBtn") },
     labeller: { ArrowRight: () => fly("keep"), ArrowLeft: () => fly("toss"), ArrowUp: () => fly("unsure"),
                 Enter: goBack, Backspace: goBack, ArrowDown: goForward, p: pauseNow, i: press("guideBtn"), l: press("boardBtn"),
@@ -1243,8 +1455,16 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       if (e.key.toLowerCase() === "p") press("mPause")(); else press("mGo")();
       return;
     }
-    const where = ["welcome", "guide", "boardPage", "devicePage", "paused", "done", "labeller"].find((id) => !$(id).hidden);
+    const where = ["welcome", "guide", "boardPage", "devicePage", "paused", "done", "coachEnd", "labeller"].find((id) => !$(id).hidden);
     if (where !== "labeller" && e.target.tagName === "BUTTON" && (e.key === "Enter" || e.key === " ")) return;   // a focused button handles its own
+    if (coach && where === "labeller") {   // tutorial and practice: the arrows answer, then any of them (or Enter) moves on
+      const m = { ArrowRight: "keep", ArrowLeft: "toss", ArrowUp: "unsure" }[e.key];
+      if (m || e.key === "Enter" || e.key === " ") e.preventDefault();
+      if (coach.phase === "result") { if (m || e.key === "Enter" || e.key === " ") coachNext(); }
+      else if (m) fly(m);
+      if (e.key === "Escape" && coach.kind === "quiz") press("coachLeave")();
+      return;
+    }
     const k = KEYS[where]?.[e.key.length === 1 ? e.key.toLowerCase() : e.key];
     if (k) { e.preventDefault(); k(); }
   });
@@ -1261,7 +1481,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     $("publicNote").hidden = yes; $("nameField").hidden = !yes;
     $("emailLabel").textContent = yes ? "Your email (needed to continue)" : "Your email";
     $("start").querySelector(".lbl").textContent = thanked ? THANKS : !yes ? "Let me know when it goes live"
-      : nDone() ? "Next: quick refresher" : "Next: see examples";
+      : nDone() ? "Next: quick refresher" : local.get("tutorial") ? "Next: see examples" : "Next: a one-minute tutorial";
   }
   $("memberSw").setAttribute("aria-checked", String(member()));
   $("email").value = local.get("email") || "";
@@ -1291,7 +1511,8 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     $("welcomeStatus").textContent = "";
     name = $("who").value.trim();   // blank: anonymous
     local.set("name", name);
-    screen("guide");
+    if (!nDone() && !local.get("tutorial") && BASE.length) startTutorial();   // a first-timer learns by doing
+    else screen("guide");
   });
   $("beginBtn").disabled = true;
   // ---- the card order: the warm-up first, then stretches of cells that every labeller shares, each
