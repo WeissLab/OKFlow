@@ -81,11 +81,12 @@ Free projects pause after a week without use; restore one from the Supabase dash
 
 ## Get the answers
 
-**Directly (analysis computer):** run `analyst_access.sql` once in the SQL Editor, with a
-password of your own in place of `CHOOSE-A-LONG-PASSWORD`. It makes a login that can only
-read the answers, device links and who said they're a member (not their emails). Rerunning
-it is safe and keeps the password. Keep its connection string on the analysis computer only
-(see `scripts/fetch_okflow.py` in the analysis repository), then `uv run python scripts/fetch_okflow.py`.
+**Directly (analysis computer):** run `analyst_access.sql` in the SQL Editor. It makes a login that
+can only read the answers, device links and who said they're a member (not their emails), without a
+password. Then give it one in a separate query typed into the SQL Editor, never saved in a file:
+`alter role okflow_reader with password 'your-long-password';`. Rerunning the file is safe and keeps
+the password. Keep its connection string on the analysis computer only (see `scripts/fetch_okflow.py`
+in the analysis repository), then `uv run python scripts/fetch_okflow.py`.
 
 **By hand:**
 

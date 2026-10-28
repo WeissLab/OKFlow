@@ -1,7 +1,13 @@
--- Read-only access for the lab's analysis scripts. Run in the Supabase SQL Editor, after
--- replacing CHOOSE-A-LONG-PASSWORD with a long random password of your own (the password is
--- only used the first time, when the login is made; rerunning is safe and keeps it).
--- Never commit the password: keep it only in the analysis computer's local settings.
+-- Read-only access for the lab's analysis scripts. Run in the Supabase SQL Editor; rerunning is safe.
+--
+-- The login is made without a password, so it can't connect until you give it one. Do that once, in a
+-- separate query typed straight into the SQL Editor (never saved in this file or anywhere in git):
+--
+--     alter role okflow_reader with password 'your-long-password';
+--
+-- (the password goes between the single quotes; the same line changes it later). Keep the connection
+-- string with that password only on the analysis computers (see scripts/fetch_okflow.py in the
+-- analysis repository).
 --
 -- The login can read the answers, the device links and who said they're a Weiss Lab member
 -- (never their email), and can't change anything.
@@ -9,7 +15,7 @@
 do $$
 begin
   if not exists (select from pg_roles where rolname = 'okflow_reader') then
-    create role okflow_reader with login password 'CHOOSE-A-LONG-PASSWORD';
+    create role okflow_reader with login;
   end if;
 end
 $$;
