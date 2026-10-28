@@ -26,6 +26,19 @@ Nothing here says which run, condition or time point a cell came from. The
 images and card order are made in the (private) analysis repository by
 `scripts/make_swipe_set.py`.
 
+## Who can label
+
+Until the Polytechnique REB approves the public version, only Weiss Lab members label.
+The first page asks "Are you a member of the Weiss Lab?" (No by default). No: the
+person can leave an email to hear when the public version goes live. Yes: an email is
+needed to continue. Each answer adds a row to `okflow_signups` (email, member yes/no,
+the device's anonymous id). The database accepts answers only from a device whose latest
+signup says member, so the gate holds even if the page is bypassed. A Yes is remembered
+on that device; another device asks again, including one joined with a code.
+
+Waiting-list emails: Supabase → **Table Editor** → `okflow_signups`, rows with
+`member` false.
+
 ## How answers are stored
 
 Every swipe adds one row to the Supabase table `okflow_answers`: the label set,
@@ -36,8 +49,8 @@ Each browser signs in anonymously, and the page keeps the person's place and
 any unsent answers on that device, sending them when it's back online.
 
 Through the public key, the page can only add rows under its own anonymous id
-and read the leaderboard (names and counts). It can't read, change or delete
-answers.
+(answers only once that device has said it's a member) and read the leaderboard
+(names and counts). It can't read, change or delete answers or emails.
 
 **Switching device:** "switch device" on the labelling screen shows a one-time
 code (15 minutes). Entering it under the name box on another device links that
@@ -70,7 +83,8 @@ Free projects pause after a week without use; restore one from the Supabase dash
 
 **Directly (analysis computer):** run `analyst_access.sql` once in the SQL Editor, with a
 password of your own in place of `CHOOSE-A-LONG-PASSWORD`. It makes a login that can only
-read the answers and device links. Keep its connection string on the analysis computer only
+read the answers, device links and who said they're a member (not their emails). Rerunning
+it is safe and keeps the password. Keep its connection string on the analysis computer only
 (see `scripts/fetch_okflow.py` in the analysis repository), then `uv run python scripts/fetch_okflow.py`.
 
 **By hand:**

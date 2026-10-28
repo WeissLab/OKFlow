@@ -6,7 +6,8 @@
 -- rows from one labeller share an ID without anyone making an account.
 --
 -- What the public web page can do, through the publishable (anon) key:
---   * add answers, only under its own anonymous ID;
+--   * say whether the person is a Weiss Lab member and leave an email (okflow_signups);
+--   * add answers, only under its own anonymous ID, and only once that device has said "member";
 --   * read the leaderboard: card counts under scrambled handles, never names;
 --   * make a one-time code to continue on another device, and use one: the new
 --     device is then counted as the same person and gets that person's latest answers.
@@ -27,6 +28,45 @@ create table if not exists public.okflow_answers (
 );
 create index if not exists okflow_answers_set_labeller on public.okflow_answers (set_id, labeller);
 
+-- Who may label. The REB found that labelling for the public is research with human participants,
+-- so until it approves the public version, only Weiss Lab members label. On each device the person
+-- says whether they're a member and gives an email: a member's email lets that device add answers,
+-- anyone else's is kept to tell them when the public version opens. Every answer adds a row; a
+-- device's latest row is the one that counts. The page can add rows under its own id, never read them.
+create table if not exists public.okflow_signups (
+  id        uuid primary key,                        -- made by the page, so a resent row is stored once
+  labeller  uuid not null default auth.uid(),
+  email     text not null check (length(email) between 3 and 254 and email ~ '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$'),
+  member    boolean not null,                        -- true: says they're a member of the Weiss Lab
+  signed_at timestamptz not null default now()
+);
+alter table public.okflow_signups enable row level security;
+revoke all on table public.okflow_signups from public, anon, authenticated;
+grant insert on table public.okflow_signups to authenticated;
+grant select (id) on table public.okflow_signups to authenticated;   -- for "on conflict (id) do nothing", as below
+drop policy if exists "add own signup" on public.okflow_signups;
+create policy "add own signup" on public.okflow_signups
+  for insert to authenticated
+  with check (labeller = (select auth.uid()));
+drop policy if exists "see own signup ids" on public.okflow_signups;
+create policy "see own signup ids" on public.okflow_signups
+  for select to authenticated
+  using (labeller = (select auth.uid()));
+
+-- Is the calling device's latest answer "member of the Weiss Lab"? Used by the rule on adding answers.
+create or replace function public.okflow_is_member()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce((select s.member from public.okflow_signups s where s.labeller = (select auth.uid())
+                   order by s.signed_at desc limit 1), false)
+$$;
+revoke all on function public.okflow_is_member() from public, anon, authenticated;
+grant execute on function public.okflow_is_member() to authenticated;
+
 alter table public.okflow_answers enable row level security;
 revoke all on table public.okflow_answers from public, anon, authenticated;
 grant insert on table public.okflow_answers to authenticated;
@@ -38,7 +78,7 @@ grant select (id) on table public.okflow_answers to authenticated;
 drop policy if exists "add own answers" on public.okflow_answers;
 create policy "add own answers" on public.okflow_answers
   for insert to authenticated
-  with check (labeller = (select auth.uid()));
+  with check (labeller = (select auth.uid()) and (select public.okflow_is_member()));
 drop policy if exists "see own answer ids" on public.okflow_answers;
 create policy "see own answer ids" on public.okflow_answers
   for select to authenticated

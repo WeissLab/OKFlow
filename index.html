@@ -87,7 +87,13 @@ button:disabled { opacity: 0.4; cursor: default; }
 .chip.keep { background: var(--keep); } .chip.toss { background: var(--toss); } .chip.unsure { background: var(--unsure); }
 .field { display: flex; flex-direction: column; gap: 8px; }
 label { font-weight: 700; }
-input[type=text] { font: inherit; width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+/* the Weiss Lab member switch: No / Yes, No until the person picks Yes */
+.member { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-weight: 700; }
+.switch { display: inline-flex; flex: none; padding: 3px; border: none; background: var(--line); }
+.switch span { padding: 6px 16px; border-radius: 999px; font-weight: 700; color: var(--muted); }
+.switch[aria-checked="false"] .sw-no { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / 0.2); }
+.switch[aria-checked="true"] .sw-yes { background: var(--keep); color: var(--surface); }
+input[type=text], input[type=email] { font: inherit; width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
 
 /* the two image panels: brightfield and fluorescence, each a square crop of a sprite sheet */
 .panes { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
@@ -244,12 +250,18 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       <span class="chip toss">← Reject</span><span>Blurry or streaked, cut off by the edge of the image, two cells, a bead or debris.</span>
       <span class="chip unsure">↑ Not sure</span><span>You really can't decide.</span>
     </div>
-    <form class="field" id="nameForm">
-      <label for="who">How would you like to be acknowledged?</label>
-      <input type="text" id="who" autocomplete="name" maxlength="60" placeholder="Leave blank to stay anonymous">
-      <button class="go" type="submit" id="start"><span class="lbl">Next: see examples</span> <kbd class="mouseonly">Enter</kbd></button>
+    <form class="field" id="nameForm" novalidate>
+      <div class="member"><span id="memberQ">Are you a member of the Weiss Lab?</span><button type="button" class="switch" id="memberSw" role="switch" aria-checked="false" aria-labelledby="memberQ"><span class="sw-no">No</span><span class="sw-yes">Yes</span></button></div>
+      <p class="note keynote" id="publicNote">The public version of OKFlow is undergoing institutional approval. Until then, only members of the Weiss Lab can label. Leave your email and we'll let you know when it goes live.</p>
+      <div class="field" id="nameField" hidden>
+        <label for="who">How would you like to be acknowledged?</label>
+        <input type="text" id="who" autocomplete="name" maxlength="60" placeholder="Leave blank to stay anonymous">
+      </div>
+      <label for="email" id="emailLabel">Your email</label>
+      <input type="email" id="email" autocomplete="email" maxlength="254" placeholder="you@example.com" spellcheck="false" autocapitalize="off">
+      <button class="go" type="submit" id="start"><span class="lbl">Let me know when it goes live</span> <kbd class="mouseonly">Enter</kbd></button>
     </form>
-    <p class="muted small">We save your answers, how long each one took and the name you give, to build a reference set of cell images for the <a href="https://weisslab.ca">Weiss Lab</a> at Polytechnique Montréal. We use it only in our thanks: the leaderboard shows you as “You” and everyone else under a made-up name. Your place is kept on this device, so finish on the same phone or computer.</p>
+    <p class="muted small">We save your email (only to contact you about OKFlow; it's never shown to anyone) and, if you label, your answers, how long each one took and the name you give, to build a reference set of cell images for the <a href="https://weisslab.ca">Weiss Lab</a> at Polytechnique Montréal. We use the name only in our thanks: the leaderboard shows you as “You” and everyone else under a made-up name. Your place is kept on this device, so finish on the same phone or computer.</p>
     <p class="muted small">Started on another phone or computer? <button class="linkish" type="button" id="haveCodeBtn">Enter your code</button> · Labelled on the earlier OKCell page? <button class="linkish" type="button" id="importBtn">Import those answers</button><input type="file" id="importFile" accept=".json,application/json" hidden></p>
     <form class="codeform" id="codeForm" hidden>
       <input type="text" id="codeIn" maxlength="9" placeholder="ABCD-1234" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Code from your other device">
@@ -416,6 +428,11 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   // "hv" both), then "b" when the card shows brightfield only: "404", "404vb", "37hvb", "37h".
   let votes = {}, outbox = [], seq = 0;   // read from this device once cards.json gives the set
   let name = local.get("name") || "";
+  // The Weiss Lab member gate (setup.sql okflow_signups): answers go to the server only from a device whose
+  // latest signup says "member", so they wait in the outbox until then. The signup itself waits in signupOut.
+  const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+  const member = () => local.get("member") === "yes";   // confirmed with an email on this device
+  let signupOut = (() => { try { return JSON.parse(local.get("signup_out") || "null"); } catch { return null; } })();
   let BASE = [], DISPLAY = [], N = 0;   // BASE: the set's cards (two showings per cell); DISPLAY adds any bonus round
   const ORIENTS = ["", "h", "v", "hv"];
   let pos = 0, shownAt = performance.now(), zoom = 1;
@@ -516,21 +533,24 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     if (row) { outbox.push(row); local.set("outbox", JSON.stringify(outbox), true); local.set("seq", String(seq), true); }
     flush();
   }
+  const toSend = () => signupOut || (member() && outbox.length);
   async function flush() {
-    if (sending || !sb || !uid || refused || !outbox.length) return;
+    if (sending || !sb || !uid || refused || !toSend()) return;
     sending = true;
-    while (outbox.length) {
-      const batch = outbox.slice(0, 100);
+    while (toSend()) {
+      const signup = !!signupOut, batch = signup ? [signupOut] : outbox.slice(0, 100);   // the signup goes first
       let error;
-      try { ({ error } = await sb.from("okflow_answers").upsert(batch, { onConflict: "id", ignoreDuplicates: true })); }
+      try { ({ error } = await sb.from(signup ? "okflow_signups" : "okflow_answers").upsert(batch, { onConflict: "id", ignoreDuplicates: true })); }
       catch (e) { error = { message: String(e) }; }
       if (!error) {
+        if (signup) { signupOut = null; local.set("signup_out", ""); continue; }
         outbox.splice(0, batch.length); local.set("outbox", JSON.stringify(outbox), true);
         status(outbox.length ? `Saving… ${outbox.length} to go` : "Saved.");
         continue;
       }
       if (/^(22|23|42)/.test(error.code || "")) {   // refused by the database's rules: retrying won't help
         refused = true;
+        if (signup) $("welcomeStatus").textContent = "Your email couldn't be saved just now. Please try again later.";
         status("Your answers couldn't be saved online; they're kept on this device. Please tell Lucien.", true);
         break;
       }
@@ -708,7 +728,8 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     if (data[0]?.name) { name = data[0].name; $("who").value = name; }
     queueSave(); loadBoard();
     $("codeForm").hidden = true; $("codeIn").value = "";
-    say(`Welcome back${name ? ", " + name : ""}: your ${nDone()} answers are here. Tap Next to continue.`);
+    say(`Welcome back${name ? ", " + name : ""}: your ${nDone()} answers are here. ` +
+        (saysYes() ? "Enter your email and tap Next to continue." : "To continue, switch to Yes if you're a member of the Weiss Lab, enter your email and tap Next."));
     welcomeBack();
   });
   $("boardBtn").addEventListener("click", () => openBoard("labeller"));
@@ -958,9 +979,41 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     if (k) { e.preventDefault(); k(); }
   });
 
-  // ---- start: name, then the examples, then labelling ----
+  // ---- start: member or not, email and name, then the examples, then labelling ----
+  // No (the default): only the email, to hear when the public version goes live. Yes: the email is needed to go on.
+  // A Yes is remembered on this device; another device asks again, even after a code.
+  const saysYes = () => $("memberSw").getAttribute("aria-checked") === "true";
+  function gate() {
+    const yes = saysYes();
+    $("publicNote").hidden = yes; $("nameField").hidden = !yes;
+    $("emailLabel").textContent = yes ? "Your email (needed to continue)" : "Your email";
+    $("start").querySelector(".lbl").textContent = !yes ? "Let me know when it goes live" : nDone() ? "Next: quick refresher" : "Next: see examples";
+  }
+  $("memberSw").setAttribute("aria-checked", String(member()));
+  $("email").value = local.get("email") || "";
+  gate();
+  $("memberSw").addEventListener("click", () => {
+    $("memberSw").setAttribute("aria-checked", String(!saysYes()));
+    $("welcomeStatus").textContent = "";
+    gate();
+  });
+  function signUp(email, yes) {   // one row per change of answer or email on this device
+    local.set("email", email); local.set("member", yes ? "yes" : "");
+    if (local.get("signup") === `${yes}|${email}`) { flush(); return; }
+    local.set("signup", `${yes}|${email}`);
+    signupOut = { id: crypto.randomUUID(), email, member: yes }; local.set("signup_out", JSON.stringify(signupOut));
+    flush();
+  }
   $("nameForm").addEventListener("submit", (e) => {
     e.preventDefault();
+    const email = $("email").value.trim(), yes = saysYes();
+    if (!EMAIL.test(email)) {
+      $("welcomeStatus").textContent = yes ? "Enter your email to continue." : "Enter your email and we'll let you know when it goes live.";
+      $("email").focus(); return;
+    }
+    signUp(email, yes);
+    if (!yes) { $("welcomeStatus").textContent = "Thank you! We'll email you when the public version goes live."; return; }
+    $("welcomeStatus").textContent = "";
     name = $("who").value.trim();   // blank: anonymous
     local.set("name", name);
     screen("guide");
@@ -1003,7 +1056,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     $("welcomeBack").textContent = `Welcome back${name ? ", " + name : ""}! Your ${d.toLocaleString()} answers are saved. ` +
       `You'll see the instructions again as a quick refresher, then ${where}.`;
     $("guideBack").textContent = `Just a refresher: your ${d.toLocaleString()} answers are saved and ${where}.`;
-    $("start").querySelector(".lbl").textContent = back ? "Next: quick refresher" : "Next: see examples";
+    gate();
     if ($("beginBtn").querySelector(".lbl").textContent !== "Back to labelling") {
       $("beginBtn").querySelector(".lbl").textContent = back ? "Continue labelling" : "Start labelling";
       $("guideTitle").textContent = back ? "Refresher before you continue" : "Instructions";
