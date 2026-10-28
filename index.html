@@ -840,11 +840,11 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
                                   : `Agreement with others: appears once you share 30 cards with them (${cards} so far).`;
       return;
     }
+    // counted over the caller's latest 1,000 answers only (setup.sql), so it follows how they label now
     el.replaceChildren();
-    const head = document.createElement("span"); head.className = "score-label"; head.textContent = "Agreement with others";
-    const b = document.createElement("b"); b.textContent = ` ${Math.round(100 * agree / cards)}%`;
-    const sm = document.createElement("small"); sm.textContent = `same as most other labellers on ${agree} of ${cards} cards (${others} others so far)`;
-    el.append(head, b, document.createElement("br"), sm);
+    const b = document.createElement("b"); b.textContent = `${Math.round(100 * agree / cards)}%`;
+    const sm = document.createElement("small"); sm.textContent = `from ${cards.toLocaleString()} of your last ${Math.min(nDone(), 1000).toLocaleString()} answers that other people also labelled (${others} others so far)`;
+    el.append("Interesting: you agree with others ", b, " of the time on this dataset.", document.createElement("br"), sm);
   }
   function drawConsist(hist, nPairs) {
     const box = $("mConsist"); box.replaceChildren();

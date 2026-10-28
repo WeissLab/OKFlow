@@ -204,9 +204,10 @@ $$;
 revoke all on function public.okflow_use_code(text, text) from public, anon, authenticated;
 grant execute on function public.okflow_use_code(text, text) to authenticated;
 
--- Agreement with others, for the caller only: on each card that at least two other people answered and
--- where most of them gave the same answer, does the caller's latest answer match theirs? Returns counts
--- only: how many such cards the caller answered, how many agreed, and how many other people have answered.
+-- Agreement with others, for the caller only, over the caller's 1,000 most recently answered cards: on each
+-- of those that at least two other people answered and where most of them gave the same answer, does the
+-- caller's latest answer match theirs? Returns counts only: how many such cards, how many agreed, and how
+-- many other people have answered.
 create or replace function public.okflow_agreement(p_set text)
 returns table (agree bigint, cards bigint, others bigint)
 language sql
@@ -217,11 +218,17 @@ as $$
   with me as (select public.okflow_person((select auth.uid())) as person),
   latest as (
     select distinct on (coalesce(p.person, a.labeller), a.card)
-           coalesce(p.person, a.labeller) as person, a.card, a.answer
+           coalesce(p.person, a.labeller) as person, a.card, a.answer, a.answered_at
     from public.okflow_answers a
     left join public.okflow_people p on p.labeller = a.labeller
     where a.set_id = p_set
     order by coalesce(p.person, a.labeller), a.card, a.answered_at desc, a.seq desc
+  ),
+  mine as (
+    select l.card, l.answer from latest l, me
+    where l.person = me.person
+    order by l.answered_at desc
+    limit 1000
   ),
   votes as (
     select l.card, l.answer, count(*) as n, sum(count(*)) over (partition by l.card) as total
@@ -233,10 +240,8 @@ as $$
   select count(*) filter (where m.answer = l.answer),
          count(*),
          (select count(distinct l2.person) from latest l2, me where l2.person <> me.person)
-  from latest l
+  from mine l
   join majority m on m.card = l.card
-  cross join me
-  where l.person = me.person
 $$;
 revoke all on function public.okflow_agreement(text) from public, anon, authenticated;
 grant execute on function public.okflow_agreement(text) to authenticated;
