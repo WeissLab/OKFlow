@@ -690,7 +690,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   // gets another try. The score is how many were right on the first try, of those that ask. Nothing is saved. ----
   const TOUCH = matchMedia("(pointer: coarse)").matches;
   const HOW = TOUCH ? { keep: "Swipe right", toss: "Swipe left", unsure: "Swipe up" } : { keep: "Press →", toss: "Press ←", unsure: "Press ↑" };
-  const TUT_ITEMS = [399, 736];
+  const TUT_ITEMS = [339, 476, 338];   // plain round keepers, so the first cells someone sees look like a normal cell
   const TUTORIAL = [
     { g: 0, single: true, v: "keep", told: true, notes: [[24, 37, 12, 20, "crisp edge"]],
       ask: "This grey picture is the brightfield. It's the one you judge. This cell is sharp: its edge is crisp. {keep} to keep it.",
@@ -698,7 +698,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     { g: 2, single: true, v: "toss", told: true, notes: [[21, 40, 12, 20, "soft edge"]],
       ask: "This one is out of focus: its edge is soft and hazy. {toss} to reject it.",
       right: "Blurry cells are rejected." },
-    { g: 1, v: "keep", notes: [[21, 40, 8, 18, "crisp edge"]],
+    { k: "339", v: "keep", notes: [[28, 40, 10, 20, "crisp edge"]],
       ask: "Now the fluorescence shows on the right. It often looks soft even when the cell is sharp, so judge the grey brightfield. Keep or reject?",
       right: "The brightfield is sharp, so it's a keeper, even though the fluorescence is soft.",
       wrong: "Judge the grey brightfield: its edge is crisp, so this one is a keeper." },
@@ -708,7 +708,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     { g: 5, v: "toss", notes: [[56, 38, 68, 20, "cut off"]], ask: "Your call. Check the whole cell, right up to the edges of the image.",
       right: "It's sharp, but part of it runs off the edge. Cut off means reject.",
       wrong: "It's sharp, but part of it runs off the edge of the image. Cut off means reject, even when it's sharp." },
-    { k: "399", v: "keep", ask: "Your call.",
+    { k: "476", v: "keep", ask: "Your call.",
       right: "Sharp, whole and on its own: a keeper.",
       wrong: "This one is sharp, whole and on its own: a keeper." },
     { g: 6, v: "toss", notes: [[61, 40, 70, 20, "cut off"]], ask: "Your call.",
@@ -717,7 +717,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     { g: 9, v: "toss", notes: [[44, 42, 60, 14, "small, dark"]], ask: "Your call.",
       right: "That's a bead or a dead cell: small, dark and smooth.",
       wrong: "This is a bead or a dead cell, not a living cell: small, dark and smooth. Reject it." },
-    { k: "736b", v: "keep", ask: "Last one. Your call.",
+    { k: "338b", v: "keep", ask: "Last one. Your call.",
       right: "You're ready!",
       wrong: "Sharp, whole and single: a keeper." },
   ];
