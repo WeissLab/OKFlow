@@ -120,6 +120,12 @@ input[type=text], input[type=email] { font: inherit; width: 100%; padding: 12px 
 .board li.me { border-color: var(--keep); border-width: 2px; }
 .board .n { font-family: var(--display); font-weight: 800; font-variant-numeric: tabular-nums; color: var(--keep); }
 .board .who { min-width: 0; overflow-wrap: anywhere; }
+/* the short leaderboard on the break and pause screens: the top three, then you */
+.board.mini { width: min(100%, 300px); gap: 4px; text-align: left; }
+.board.mini li { grid-template-columns: 2em 1fr auto; padding: 5px 12px; font-size: 0.88rem; }
+.board.mini li::before { content: attr(data-rank); }
+.board.mini li.gap { display: block; background: none; border: none; padding: 0; text-align: center; color: var(--muted); line-height: 1; }
+.board.mini li.gap::before { content: none; }
 
 /* labelling */
 .labeller { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -352,6 +358,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   <section class="done" id="paused" hidden>
     <h1>Paused</h1>
     <p class="muted" id="pausedText"></p>
+    <ol class="board mini" id="pBoard" aria-label="Leaderboard" hidden style="margin-inline: auto"></ol>
     <button class="go" type="button" id="resumeBtn"><span class="lbl">Resume</span> <kbd class="mouseonly">Enter</kbd></button>
     <button type="button" id="pausedGuide"><span class="lbl">Instructions</span> <kbd class="mouseonly">I</kbd></button>
     <button type="button" id="pausedBoard"><span class="lbl">See the leaderboard</span> <kbd class="mouseonly">L</kbd></button>
@@ -370,7 +377,8 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     <p class="unlocked" id="mUnlocked" hidden>📊 Stats unlocked!</p>
     <div class="consist" id="mConsist"></div>
     <p class="agree" id="mAgree" hidden></p>
-    <p class="muted" id="mText"></p>
+    <ol class="board mini" id="mBoard" aria-label="Leaderboard" hidden></ol>
+    <p class="muted" id="mText">Take a breath.</p>
     <div class="countdown" id="mCount" aria-live="polite">
       <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" class="track"/><circle cx="50" cy="50" r="44" class="ring" id="mRing"/></svg>
       <span id="mLeft">5</span>
@@ -688,6 +696,19 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       li.append(who, n); ol.append(li);
     }
   }
+  function drawMiniBoard(ol) {   // the top three, then you if you're further down; hidden until there's someone else
+    const rows = rankRows(), me = rows.findIndex((r) => r.me);
+    ol.replaceChildren(); ol.hidden = rows.length < 2;
+    const add = (r, i) => {
+      const li = document.createElement("li"); li.dataset.rank = i + 1; if (r.me) li.className = "me";
+      const who = document.createElement("span"); who.className = "who"; who.textContent = r.name;
+      const n = document.createElement("span"); n.className = "n"; n.textContent = r.n;
+      li.append(who, n); ol.append(li);
+    };
+    rows.slice(0, 3).forEach(add);
+    if (me > 3) { const li = document.createElement("li"); li.className = "gap"; li.textContent = "⋮"; ol.append(li); }
+    if (me >= 3) add(rows[me], me);
+  }
   let returnTo = "labeller";
   function openBoard(from) { returnTo = from; drawBoard(); screen("boardPage"); loadBoard().then(() => { if (!$("boardPage").hidden) drawBoard(); }); }
 
@@ -764,22 +785,25 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       hist = hist.filter((h) => h.d < d).concat([{ d, pct: Math.round(100 * same / pairs.length) }]).slice(-40);
       local.set("consist", JSON.stringify(hist), true);
     }
-    // the stats themselves are a reward: shown at 100, 500, 1000 and 1500 cards (and at the end), teased in between
-    const UNLOCK = [100, 500, 1000, 1500], unlocked = UNLOCK.includes(d);
-    $("mUnlocked").hidden = $("mAgree").hidden = !unlocked;
-    document.querySelector(".mbox").classList.toggle("unlock", unlocked);
-    if (unlocked) { drawConsist(hist, pairs.length); drawAgree($("mAgree")); }
+    // the stats themselves are a reward: self-consistency every 150 cards, agreement with others from 1,000
+    // (and both at the end), each saying in between how far off it is
+    const CONSIST_EVERY = 150, AGREE_AT = 1000;
+    const stats = d % CONSIST_EVERY === 0 || d === AGREE_AT;
+    $("mUnlocked").hidden = !stats;
+    document.querySelector(".mbox").classList.toggle("unlock", stats);
+    if (stats) drawConsist(hist, pairs.length);
     else {
-      const next = UNLOCK.find((u) => u > d), t = document.createElement("p");
-      t.className = "consist-head teaser";
-      t.textContent = next ? `🔒 Your stats unlock at ${next} cards` : "🔒 Your final stats are waiting at the end";
+      const t = document.createElement("p"); t.className = "consist-head teaser";
+      t.textContent = `🔒 Your self-consistency in ${CONSIST_EVERY - d % CONSIST_EVERY} more cells`;
       $("mConsist").replaceChildren(t);
     }
-    const rankText = () => {
-      const rows = rankRows(), rank = rows.findIndex((r) => r.me) + 1;
-      $("mText").textContent = (rank && rows.length > 1 ? `You're #${rank} of ${rows.length} on the leaderboard. ` : "") + "Take a breath.";
-    };
-    rankText(); loadBoard().then(rankText);
+    if (d < AGREE_AT) {
+      $("mAgree").hidden = false;
+      $("mAgree").textContent = `🔒 At ${AGREE_AT.toLocaleString()} cells, see how your answers agree with others (${(AGREE_AT - d).toLocaleString()} to go)`;
+    } else if (stats) drawAgree($("mAgree"));
+    else $("mAgree").hidden = true;
+    const board = () => drawMiniBoard($("mBoard"));
+    board(); loadBoard().then(board);
     $("milestone").hidden = false;
     try { navigator.vibrate?.([60, 40, 60]); } catch {}
     // a big countdown ring, then "Keep going" opens up
@@ -853,6 +877,8 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     $("pausedText").textContent = `Your ${nDone()} answers are saved` +
       (outbox.length ? ` on this device and will be sent once you're online` : "") +
       `. You can close this page; it opens where you left off on this device.`;
+    const board = () => drawMiniBoard($("pBoard"));
+    board(); loadBoard().then(board);
   }
   $("resumeBtn").addEventListener("click", () => { screen("labeller"); show(pos); });
   $("pausedBoard").addEventListener("click", () => openBoard("paused"));
@@ -862,24 +888,34 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     cv.width = cv.clientWidth * dpr; cv.height = cv.clientHeight * dpr;
     const css = getComputedStyle(document.documentElement);
     const colors = [css.getPropertyValue("--keep"), css.getPropertyValue("--toss"), css.getPropertyValue("--unsure")];
-    const cells = Array.from({ length: 26 }, () => ({
-      x: Math.random() * cv.width, y: Math.random() * cv.height, r: (10 + Math.random() * 18) * dpr,
-      v: (0.6 + Math.random() * 1.6) * dpr, blur: Math.random() < 0.3, c: colors[Math.floor(Math.random() * 3)],
-    }));
+    // Cells drift down a stream with a gentle sway. Depth sets the look: near cells are bigger, faster,
+    // stronger and sharp; far ones small, slow, faint and some blurred. Drawn far to near, timed by the clock.
+    const cells = Array.from({ length: 30 }, () => {
+      const depth = Math.random();
+      return { depth, x: Math.random() * cv.width, y: Math.random() * cv.height, r: (8 + 20 * depth) * dpr,
+        v: (22 + 60 * depth) * dpr, sway: Math.random() * 2 * Math.PI, blur: depth < 0.35 && Math.random() < 0.6,
+        c: colors[Math.floor(Math.random() * 3)] };
+    }).sort((a, b) => a.depth - b.depth);
     const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const draw = () => {
+    let last = null;
+    const draw = (t) => {
+      const dt = last === null ? 0 : Math.min(0.05, (t - last) / 1000); last = t;
       ctx.clearRect(0, 0, cv.width, cv.height);
       for (const c of cells) {
-        if (!still) { c.y -= c.v; if (c.y < -c.r * 2) { c.y = cv.height + c.r * 2; c.x = Math.random() * cv.width; } }
-        ctx.globalAlpha = 0.35; ctx.filter = c.blur ? `blur(${4 * dpr}px)` : "none";
+        if (!still) {
+          c.y += c.v * dt; c.sway += 0.9 * dt;
+          if (c.y > cv.height + c.r * 2) { c.y = -c.r * 2; c.x = Math.random() * cv.width; }
+        }
+        const x = c.x + Math.sin(c.sway) * 8 * dpr;
+        ctx.globalAlpha = 0.18 + 0.27 * c.depth; ctx.filter = c.blur ? `blur(${4 * dpr}px)` : "none";
         ctx.strokeStyle = c.c; ctx.lineWidth = 3 * dpr;
-        ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2); ctx.stroke();
-        ctx.fillStyle = c.c; ctx.beginPath(); ctx.arc(c.x - c.r * 0.15, c.y, c.r * 0.35, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, c.y, c.r, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = c.c; ctx.beginPath(); ctx.arc(x - c.r * 0.15, c.y, c.r * 0.35, 0, Math.PI * 2); ctx.fill();
       }
       ctx.filter = "none"; ctx.globalAlpha = 1;
       if (!still && !$("milestone").hidden) flowAnim = requestAnimationFrame(draw);
     };
-    draw();
+    draw(performance.now());
   }
 
   // ---- the swipe, pinch zoom and wheel zoom: anywhere on the labelling screen except its buttons ----
