@@ -242,7 +242,8 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
 @media (prefers-reduced-motion: reduce) { .award, .award.new { animation: none; } }
 .tbox { gap: 12px; max-width: 460px; width: 100%; }
 .tbox h2 { font-size: 1.8rem; }
-.tbox .note { text-align: left; }
+.tbox .note, .mbox .fact { text-align: left; }
+.mbox .fact { max-width: 380px; }
 .texamples { display: grid; gap: 8px; width: 100%; text-align: left; }
 .texamples .ex { grid-template-columns: 50% 1fr; }
 .was.look { color: var(--toss); font-weight: 700; }
@@ -392,6 +393,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     <p class="big-n" id="mN">50</p>
     <h2 id="mTitle">You've got flow!</h2>
     <div class="awards" id="mAwards" aria-label="Your awards so far"></div>
+    <p class="note keepnote fact" id="mFact" hidden><strong>Did you know?</strong> <span id="mFactText"></span></p>
     <p class="unlocked" id="mUnlocked" hidden>📊 Stats unlocked!</p>
     <div class="consist" id="mConsist"></div>
     <p class="agree" id="mAgree" hidden></p>
@@ -623,21 +625,83 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     return out;
   }
 
-  // ---- a new kind of cell: what it is and a fun fact, the first time this device meets one ----
+  // ---- a new kind of cell: what it is and a fun fact, the first time this device meets one; then one more
+  // fact about the cells just labelled on each break that doesn't show stats ----
   const KINDS = {
     c: { name: "CD34+ blood stem cells", about: "Stem cells from human blood and bone marrow. Every blood cell you have, red, white or platelet, comes from cells like these, and they're the cells given in a bone-marrow transplant.",
-         fact: "Your bone marrow makes about two million new red blood cells every second." },
+         facts: [
+           "Your bone marrow makes about two million new red blood cells every second.",
+           "CD34 is a protein on the surface of these cells. Doctors use it to pick the stem cells out of a blood sample for a transplant.",
+           "Red blood cells, white blood cells and platelets all come from the same kind of stem cell, which decides what to become step by step.",
+           "A single blood stem cell can rebuild the whole blood system of a mouse.",
+           "Most blood stem cells spend their time resting and divide only now and then, which helps protect them from damage.",
+           "Donors can give stem cells from a vein: a drug coaxes them out of the bone marrow into the blood first.",
+           "Umbilical cord blood is rich in CD34+ cells, which is why it can be banked and used for transplants.",
+           "Bone-marrow transplants began in the late 1950s. E. Donnall Thomas shared the 1990 Nobel Prize in Medicine for that work.",
+           "The first approved CRISPR medicine, for sickle cell disease in 2023, edits a patient's own CD34+ cells.",
+           "A red blood cell made from these stem cells lives about 120 days.",
+         ] },
     u: { name: "U2OS cells", about: "A human bone cancer cell line, grown in labs around the world since 1964.",
-         fact: "U2OS cells spread out flat and wide, which makes them a favourite for microscopy." },
+         facts: [
+           "U2OS cells spread out flat and wide, which makes them a favourite for microscopy.",
+           "U2OS cells came from a bone tumour in the shin of a 15-year-old girl, in 1964.",
+           "The name stands for U-2 osteosarcoma: a cancer of the cells that build bone.",
+           "U2OS cells keep the ends of their chromosomes long without the usual enzyme, telomerase, using a backup route called ALT.",
+           "U2OS cells have a working p53 gene, the \"guardian of the genome\" that stops damaged cells from dividing.",
+           "U2OS cells are a go-to for studying DNA repair: researchers cut their DNA on purpose and watch repair proteins gather at the breaks.",
+           "Most normal human cells stop after about 50 divisions (the Hayflick limit); cell lines like U2OS keep dividing.",
+           "Labs check that their U2OS really are U2OS by DNA fingerprinting, because mixed-up cell lines have misled many studies.",
+           "Cells like these grow at body temperature in a pink broth that turns yellow when they need feeding.",
+           "A human cell packs about two metres of DNA into a nucleus about a hundredth of a millimetre wide.",
+         ] },
     h: { name: "HEK293 cells", about: "Human embryonic kidney cells, one of the most used cell lines in biology.",
-         fact: "The 293 in the name is said to come from the 293rd experiment in the lab that made the line, in 1973." },
+         facts: [
+           "The 293 in the name is said to come from the 293rd experiment in the lab that made the line, in 1973.",
+           "HEK293 cells were made in Leiden, in the Netherlands, by Frank Graham in Alex van der Eb's lab.",
+           "Pieces of DNA from adenovirus, a common cold virus, let HEK293 cells grow forever in a dish.",
+           "Despite the name, HEK293 cells have a lot in common with nerve cells: they may come from a rare neuron-like cell in the kidney.",
+           "Viruses grow well in HEK293 cells, so they're used to make gene-therapy viruses and some vaccines.",
+           "HEK293 cells take up new DNA easily, so labs use them to make proteins to study.",
+           "HEK293 cells have about 64 chromosomes instead of the usual 46.",
+           "HEK293 cells hold on to their dish only loosely: a firm tap can knock them off.",
+           "A variant called HEK293T carries an extra gene that makes it even better at making viruses for research.",
+           "A dish of HEK293 cells doubles in roughly a day.",
+         ] },
     t: { name: "T cells", about: "Immune cells that recognise and kill infected or cancerous cells.",
-         fact: "The T stands for thymus, the small organ behind your breastbone where T cells learn to tell your own cells from invaders." },
+         facts: [
+           "The T stands for thymus, the small organ behind your breastbone where T cells learn to tell your own cells from invaders.",
+           "Most T cells in training fail the thymus's tests and die there: only a few percent make it out.",
+           "Each T cell carries a receptor of its own shape; together, your T cells can recognise millions of different targets.",
+           "\"Killer\" T cells destroy infected cells, while \"helper\" T cells direct the rest of the immune response.",
+           "Memory T cells can stay in your body for decades after an infection or a vaccine, ready to respond faster next time.",
+           "Your thymus is largest in childhood and slowly shrinks after puberty.",
+           "CAR-T therapy gives a patient's own T cells a new receptor that finds cancer cells, then puts them back.",
+           "HIV infects helper T cells, which is why untreated HIV weakens the immune system.",
+           "An adult has hundreds of billions of T cells.",
+           "Researchers edit T cells with CRISPR to make them better at fighting cancer.",
+         ] },
     y: { name: "yeast", about: "Baker's yeast: single cells, much smaller than ours, that divide by budding. A daughter cell grows out of the mother as a small bud.",
-         fact: "The yeast that raises bread and brews beer shares many genes with us, so it's used to study how our DNA is packed and repaired. Several Nobel Prizes came from work on yeast.",
+         facts: [
+           "The yeast that raises bread and brews beer shares many genes with us, so it's used to study how our DNA is packed and repaired. Several Nobel Prizes came from work on yeast.",
+           "A yeast mother cell can bud about 25 times before she stops, and each bud leaves a scar on her surface.",
+           "Yeast was the first organism with a nucleus to have its whole genome read, in 1996.",
+           "Yeast has about 6,000 genes; you have about 20,000.",
+           "In good conditions, a yeast cell divides about every 90 minutes.",
+           "Its name, Saccharomyces cerevisiae, means \"sugar fungus of beer\".",
+           "Yeast turns sugar into alcohol and carbon dioxide: the gas bubbles are what make bread rise.",
+           "Yeast comes in two mating types, a and alpha, which can fuse into one cell.",
+           "Many human genes can stand in for their missing yeast versions and keep the yeast alive.",
+           "The 2001 Nobel Prize, for how cells decide when to divide, came largely from work on yeast.",
+         ],
          rules: "A small bud is part of the cell: keep it if it's sharp. Two cells stuck together, or a second lobe nearly as big as the first: reject. Blurry or cut off: reject, as before.",
          examples: [["Single cell, sharp", "keep"], ["Small bud: still one cell", "keep"], ["Two cells stuck together", "toss"], ["Out of focus", "toss"], ["Cut off at the edge", "toss"]] },
   };
+  // The next fact about a type: the introduction shows the first, breaks go on through the rest, round and round.
+  function nextFact(t) {
+    const shown = readJSON("facts", {}), n = shown[t] || 0, fs = KINDS[t].facts;
+    shown[t] = n + 1; local.set("facts", JSON.stringify(shown), true);
+    return fs[n % fs.length];
+  }
   let seenTypes = [];
   function introduce(k) {
     const t = typeOf(k);
@@ -647,7 +711,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     $("tKicker").textContent = first ? "Your first cells" : "New cells";
     $("tTitle").textContent = first ? `Meet the ${kind.name}` : "Hey now, super swiper! Ready for a changeup?";
     $("tAbout").textContent = (first ? "" : `Next up: ${kind.name}. `) + kind.about;
-    $("tFact").textContent = kind.fact;
+    $("tFact").textContent = nextFact(t);
     $("tRules").hidden = !kind.rules; $("tRules").textContent = kind.rules || "";
     const ex = $("tExamples"); ex.replaceChildren(); ex.hidden = !kind.examples;
     (kind.examples || []).forEach(([caption, v], r) => {
@@ -948,6 +1012,11 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       $("mAgree").textContent = `🔒 At ${AGREE_AT.toLocaleString()} cells, see how your answers agree with others (${(AGREE_AT - d).toLocaleString()} to go)`;
     } else if (stats) drawAgree($("mAgree"));
     else $("mAgree").hidden = true;
+    // breaks without stats get a fact about the cells just labelled (the last regular card answered)
+    let lastT = null;
+    for (let p = pos - 1; p >= 0 && !lastT; p--) if (!isSlot(DISPLAY[p]) && votes[DISPLAY[p]]) lastT = typeOf(DISPLAY[p]);
+    $("mFact").hidden = stats || !KINDS[lastT];
+    if (!$("mFact").hidden) $("mFactText").textContent = nextFact(lastT);
     const board = () => drawMiniBoard($("mBoard"));
     board(); loadBoard().then(board);
     $("milestone").hidden = false;
@@ -1028,12 +1097,12 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   }
   // Pausing needs no saving step: every answer is already saved as it's given.
   $("mPause").addEventListener("click", () => pauseNow());
-  // the alert: a few easy cards missed lately, so a break and the examples are offered (nothing is said to be wrong)
+  // the alert: a few easy cards missed lately, so a break and the examples are offered (nothing hints at a check)
   function breather() {
     const next = firstUnanswered(pos + 1);
     if (next !== null) pos = next;
     screen("paused"); $("pausedTitle").textContent = "Time for a breather?";
-    $("pausedText").textContent = "A few of the easier cells just now got answers we didn't expect. That happens when eyes get tired. " +
+    $("pausedText").textContent = "You've been swiping for a while, and eyes get tired. " +
       "Take a short break, or have another look at the examples, then carry on.";
   }
   function pauseNow() {
