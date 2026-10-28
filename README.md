@@ -68,7 +68,7 @@ answers when it opens and when it comes back to the foreground.
 Done 2026-10-25: Supabase organization WeissLab; DNS record `okflow` in Cloudflare (proxied).
 Moved 2026-10-28 to project OKFlow (`dtesevyqeskycmkiglex`) in Canada (Central), `ca-central-1`,
 with the Data API on, new tables not exposed automatically and automatic RLS on; the first
-project (`mflrlsqsawvuyhfxzajc`, us-east-1) was renamed OKFlowTest. The analysis login connects
+project (`mflrlsqsawvuyhfxzajc`, us-east-1) was deleted the same day, once its rows were all in the new one. The analysis login connects
 through the session pooler `aws-1-ca-central-1.pooler.supabase.com:5432`. The steps are kept for
 rebuilding it. Supabase can't move a project between regions: a move is a new project, `setup.sql`
 and `analyst_access.sql` run there, the three tables (answers, people, signups) copied over, and
