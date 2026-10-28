@@ -108,6 +108,9 @@ label { font-weight: 700; }
 .stats .big-n { font-family: var(--display); font-weight: 800; font-size: 4rem; line-height: 1; font-variant-numeric: tabular-nums; color: var(--keep); margin: 0; }
 .code { font-family: ui-monospace, "Cascadia Mono", Menlo, monospace; font-size: 2.4rem; font-weight: 700; letter-spacing: 0.08em; text-align: center; background: var(--surface); border: 2px dashed var(--line); border-radius: 14px; padding: 14px; }
 .codeform { display: flex; gap: 8px; }
+.codechoice { display: grid; gap: 6px; margin: 8px 0 0; padding: 0; border: 0; text-align: left; font-size: 0.9rem; }
+.codechoice label { display: flex; gap: 8px; align-items: baseline; cursor: pointer; }
+.codechoice span { color: var(--muted); font-weight: 400; }
 .codeform input { flex: 1; min-width: 0; font-family: ui-monospace, "Cascadia Mono", Menlo, monospace; text-transform: uppercase; letter-spacing: 0.06em; }
 .note.keepnote { background: color-mix(in srgb, var(--keep) 10%, var(--surface)); border-color: color-mix(in srgb, var(--keep) 40%, var(--line)); }
 .note { background: color-mix(in srgb, var(--toss) 10%, var(--surface)); border: 1px solid color-mix(in srgb, var(--toss) 40%, var(--line)); border-radius: 12px; padding: 10px 14px; font-size: 0.92rem; line-height: 1.35; }
@@ -299,6 +302,10 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       <input type="text" id="codeIn" maxlength="9" placeholder="ABCD-1234" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Code from your other device">
       <button type="submit" id="codeGo">Continue</button>
     </form>
+    <fieldset class="codechoice" id="codeChoice" hidden>
+      <label><input type="radio" name="codeMode" value="move" checked> <b>Move here</b> <span>the other device lets go: it forgets your answers and can't add more (best for a shared computer)</span></label>
+      <label><input type="radio" name="codeMode" value="keep"> <b>Keep both</b> <span>both stay yours and keep in step</span></label>
+    </fieldset>
     <p class="status" id="welcomeStatus"></p>
   </section>
 
@@ -319,7 +326,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
 
   <section class="page" id="devicePage" hidden>
     <h1>Continue on another device</h1>
-    <p class="muted">On the other phone or computer, open <strong>okflow.weisslab.ca</strong>, tap <em>Enter your code</em> under the name box and type this code. Your name and answers come with you and you carry on where you are; this device can keep going too.</p>
+    <p class="muted">On the other phone or computer, open <strong>okflow.weisslab.ca</strong>, tap <em>Enter your code</em> under the name box and type this code. Your name and answers come with you and you carry on where you are. There you choose: <strong>move here</strong> (this device lets go: it forgets your answers and can't add more) or <strong>keep both</strong> (both stay yours and keep in step).</p>
     <p class="code" id="codeOut">…</p>
     <p class="muted small" id="codeNote">Works once, for 15 minutes.</p>
     <button class="go" type="button" id="deviceBack"><span class="lbl">Back</span> <kbd class="mouseonly">Enter</kbd></button>
@@ -991,6 +998,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       if (/^(22|23|42)/.test(error.code || "")) {   // refused by the database's rules: retrying won't help
         refused = true;
         if (signup) $("welcomeStatus").textContent = "Your email couldn't be saved just now. Please try again later.";
+        else if (await checkReleased()) break;
         status("Your answers couldn't be saved online; they're kept on this device. Please tell Lucien.", true);
         break;
       }
@@ -1165,10 +1173,14 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     const { data, error } = await rpc("okflow_make_code", { p_set: SET });
     if (error || typeof data !== "string") { $("codeOut").textContent = "No code"; $("codeNote").textContent = "Couldn't make a code just now. Try again in a moment."; return; }
     $("codeOut").textContent = data.slice(0, 4) + "-" + data.slice(4);
+    const until = Date.now() + 15 * 60 * 1000;
+    const poll = setInterval(async () => {
+      if ($("devicePage").hidden || Date.now() > until || await checkReleased()) clearInterval(poll);
+    }, 4000);
     if (outbox.length) $("codeNote").textContent = `Works once, for 15 minutes. ${outbox.length} answers from this device haven't been sent yet, so they won't come with the code.`;
   });
   $("deviceBack").addEventListener("click", () => { screen("labeller"); show(pos); });
-  $("haveCodeBtn").addEventListener("click", () => { $("codeForm").hidden = false; $("codeIn").focus(); });
+  $("haveCodeBtn").addEventListener("click", () => { $("codeForm").hidden = $("codeChoice").hidden = false; $("codeIn").focus(); });
   $("codeForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const say = (m) => { $("welcomeStatus").textContent = m; };
@@ -1176,7 +1188,8 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     if (!/^[0-9a-f]{4}-?[0-9a-f]{4}$/i.test(code)) { say("A code is 8 letters and numbers, like ABCD-1234."); return; }
     if (!SET || !sb || !uid) { say("Not connected yet. Check the internet connection and try again."); return; }
     $("codeGo").disabled = true;
-    const { data, error } = await rpc("okflow_use_code", { p_code: code, p_set: SET });
+    const move = document.querySelector('input[name="codeMode"]:checked')?.value !== "keep";
+    const { data, error } = await rpc("okflow_use_code", { p_code: code, p_set: SET, p_move: move });
     $("codeGo").disabled = false;
     if (error || !Array.isArray(data)) {
       say(error?.code === "P0002" ? "That code didn't work. A code works once and for 15 minutes: make a new one on your other device."
@@ -1189,10 +1202,51 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     }
     if (data[0]?.name) { name = data[0].name; $("who").value = name; }
     queueSave(); loadBoard();
-    $("codeForm").hidden = true; $("codeIn").value = "";
+    $("codeForm").hidden = $("codeChoice").hidden = true; $("codeIn").value = "";
     say(`Welcome back${name ? ", " + name : ""}: your ${nDone()} answers are here. ` +
         (saysYes() ? "Enter your email and tap Next to continue." : "To continue, switch to Yes if you're a member of the Weiss Lab, enter your email and tap Next."));
     welcomeBack();
+  });
+  // ---- linked devices keep in step: this person's latest answers from the database (setup.sql okflow_sync) ----
+  // A card's answer from another device replaces this device's only when it is newer, so unsent answers here win.
+  async function syncAnswers() {
+    if (!sb || !uid || !SET) return;
+    const { data, error } = await rpc("okflow_sync", { p_set: SET });
+    if (error || !Array.isArray(data) || !data.length) return;
+    const was = !!votes[key()];
+    let changed = 0;
+    for (const r of data) {
+      const at = new Date(r.answered_at).toISOString();
+      if (!votes[r.card] || votes[r.card].at < at) { votes[r.card] = { v: r.answer, ms: r.decide_ms, at }; changed++; }
+    }
+    if (!changed) return;
+    local.set("votes", JSON.stringify(votes), true);
+    if (!$("welcome").hidden) welcomeBack();
+    if (!$("labeller").hidden && !coach) {
+      if (!was && votes[key()]) { const n = firstUnanswered(pos); if (n === null) finish(); else show(n); }
+      else show(pos);
+    }
+  }
+  // ---- a device let go ("move here" on another device): forget everything and start afresh as someone new ----
+  async function checkReleased() {
+    if (!sb || !uid) return false;
+    const { data, error } = await rpc("okflow_is_released", {});
+    if (error || data !== true) return false;
+    try { await sb.auth.signOut({ scope: "local" }); } catch {}
+    try {
+      const drop = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if ((k.startsWith("okflow:") && k !== "okflow:theme") || k.startsWith("okflow-auth")) drop.push(k);
+      }
+      for (const k of drop) localStorage.removeItem(k);
+      localStorage.setItem("okflow:moved", "1");
+    } catch {}
+    location.reload();
+    return true;
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") checkReleased().then((gone) => { if (!gone) syncAnswers(); });
   });
   $("boardBtn").addEventListener("click", () => openBoard("labeller"));
   $("doneBoard").addEventListener("click", () => openBoard("done"));
@@ -1555,6 +1609,10 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     cells.forEach(([first, second, lag], p) => { placed.push([p, first]); placed.push([p + lag + 0.5, second]); });
     return placed.sort((x, y) => x[0] - y[0]).map(([, k]) => k);
   }
+  if (local.get("moved")) {
+    try { localStorage.removeItem("okflow:moved"); } catch {}
+    $("welcomeStatus").textContent = "You moved to another device, so this one has let go of your answers. Anyone can start afresh here.";
+  }
   fetch("cards.json").then((r) => r.json()).then((o) => {
     SET = o.set_id; BASE = o.cells ? layout(o) : o.display; SHEET_V = o.sheet_v || {};
     votes = readJSON("votes", {}); outbox = readJSON("outbox", []); seq = Number(local.get("seq", true)) || 0;
@@ -1651,6 +1709,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
         session = data.session;
       }
       uid = session.user.id;
+      if (await checkReleased()) return;
       // a member's device that is new to this project (or signed up before signups were kept per sign-in)
       // says again that it's a member, so the database takes its answers
       const email = local.get("email");
@@ -1664,7 +1723,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       return;
     }
     if (!$("labeller").hidden) status(outbox.length ? "" : "Connected.");
-    flush(); loadBoard();
+    flush(); loadBoard(); syncAnswers();
   }
 })();
 </script>

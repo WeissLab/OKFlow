@@ -10,7 +10,9 @@
 --   * add answers, only under its own anonymous ID, and only once that device has said "member";
 --   * read the leaderboard: card counts under scrambled handles, never names;
 --   * make a one-time code to continue on another device, and use one: the new
---     device is then counted as the same person and gets that person's latest answers.
+--     device is then counted as the same person and gets that person's latest answers;
+--     with "move here" the device that made the code is let go and can't add answers;
+--   * read back its own person's latest answers, so linked devices stay in step.
 -- It cannot read, change or delete any answer. Read everything from the
 -- Supabase dashboard (Table Editor > okflow_answers > Export to CSV).
 
@@ -75,6 +77,29 @@ $$;
 revoke all on function public.okflow_is_member() from public, anon, authenticated;
 grant execute on function public.okflow_is_member() to authenticated;
 
+-- Devices let go with "move here": the person carries on on the new device, and the old one can't add
+-- answers. Its earlier answers stay the person's. The page clears its storage and starts it afresh.
+create table if not exists public.okflow_released (
+  labeller    uuid primary key,          -- the device let go
+  by_device   uuid not null,             -- the device that took over
+  released_at timestamptz not null default now()
+);
+alter table public.okflow_released enable row level security;
+revoke all on table public.okflow_released from public, anon, authenticated;
+
+-- Has the calling device been let go (moved to another device)? Used by the answer rule and the page.
+create or replace function public.okflow_is_released()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (select 1 from public.okflow_released r where r.labeller = (select auth.uid()))
+$$;
+revoke all on function public.okflow_is_released() from public, anon, authenticated;
+grant execute on function public.okflow_is_released() to authenticated;
+
 alter table public.okflow_answers enable row level security;
 revoke all on table public.okflow_answers from public, anon, authenticated;
 grant insert on table public.okflow_answers to authenticated;
@@ -86,7 +111,8 @@ grant select (id) on table public.okflow_answers to authenticated;
 drop policy if exists "add own answers" on public.okflow_answers;
 create policy "add own answers" on public.okflow_answers
   for insert to authenticated
-  with check (labeller = (select auth.uid()) and (select public.okflow_is_member()));
+  with check (labeller = (select auth.uid()) and (select public.okflow_is_member())
+              and not (select public.okflow_is_released()));
 drop policy if exists "see own answer ids" on public.okflow_answers;
 create policy "see own answer ids" on public.okflow_answers
   for select to authenticated
@@ -106,6 +132,7 @@ create table if not exists public.okflow_codes (
   set_id     text not null,
   expires_at timestamptz not null
 );
+alter table public.okflow_codes add column if not exists device uuid;   -- the device that made the code
 alter table public.okflow_people enable row level security;
 alter table public.okflow_codes enable row level security;
 revoke all on table public.okflow_people, public.okflow_codes from public, anon, authenticated;
@@ -162,8 +189,8 @@ begin
   end if;
   delete from public.okflow_codes k where k.expires_at < now() or k.person = who;
   c := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8));
-  insert into public.okflow_codes (code, person, set_id, expires_at)
-    values (c, who, p_set, now() + interval '15 minutes');
+  insert into public.okflow_codes (code, person, set_id, expires_at, device)
+    values (c, who, p_set, now() + interval '15 minutes', (select auth.uid()));
   return c;
 end
 $$;
@@ -172,7 +199,9 @@ grant execute on function public.okflow_make_code(text) to authenticated;
 
 -- Use a code: links the calling device to the code's person (along with any devices linked to
 -- it so far) and returns that person's latest answer to each card of the set, with their latest name.
-create or replace function public.okflow_use_code(p_code text, p_set text)
+-- p_move ("move here"): the device that made the code is let go; otherwise ("keep both") both stay.
+drop function if exists public.okflow_use_code(text, text);
+create or replace function public.okflow_use_code(p_code text, p_set text, p_move boolean default false)
 returns table (name text, card text, answer text, decide_ms integer, answered_at timestamptz)
 language plpgsql
 volatile
@@ -182,6 +211,7 @@ as $$
 declare
   me uuid := (select auth.uid());
   who uuid;
+  maker uuid;
   nm text;
 begin
   if me is null then
@@ -189,7 +219,7 @@ begin
   end if;
   delete from public.okflow_codes k
     where k.code = upper(replace(trim(p_code), '-', '')) and k.set_id = p_set and k.expires_at >= now()
-    returning k.person into who;
+    returning k.person, k.device into who, maker;
   if who is null then
     raise exception 'unknown or expired code' using errcode = 'P0002';
   end if;
@@ -197,6 +227,9 @@ begin
     update public.okflow_people set person = who, linked_at = now() where person = me;
     insert into public.okflow_people (labeller, person) values (me, who)
       on conflict (labeller) do update set person = excluded.person, linked_at = now();
+  end if;
+  if p_move and maker is not null and maker <> me then
+    insert into public.okflow_released (labeller, by_device) values (maker, me) on conflict (labeller) do nothing;
   end if;
   select a.name into nm
     from public.okflow_answers a left join public.okflow_people p on p.labeller = a.labeller
@@ -209,8 +242,33 @@ begin
     order by a.card, a.answered_at desc, a.seq desc;
 end
 $$;
-revoke all on function public.okflow_use_code(text, text) from public, anon, authenticated;
-grant execute on function public.okflow_use_code(text, text) to authenticated;
+revoke all on function public.okflow_use_code(text, text, boolean) from public, anon, authenticated;
+grant execute on function public.okflow_use_code(text, text, boolean) to authenticated;
+
+-- The calling device's person's latest answer to each card of the set, with their latest name, so linked
+-- devices stay in step. Nothing for a device that has been let go.
+create or replace function public.okflow_sync(p_set text)
+returns table (name text, card text, answer text, decide_ms integer, answered_at timestamptz)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  with mine as (
+    select a.name, a.card, a.answer, a.decide_ms, a.answered_at, a.seq
+    from public.okflow_answers a
+    left join public.okflow_people p on p.labeller = a.labeller
+    where a.set_id = p_set
+      and coalesce(p.person, a.labeller) = public.okflow_person((select auth.uid()))
+      and not public.okflow_is_released()
+  )
+  select (select m.name from mine m order by m.answered_at desc, m.seq desc limit 1),
+         x.card, x.answer, x.decide_ms, x.answered_at
+  from (select distinct on (m.card) m.card, m.answer, m.decide_ms, m.answered_at, m.seq
+        from mine m order by m.card, m.answered_at desc, m.seq desc) x
+$$;
+revoke all on function public.okflow_sync(text) from public, anon, authenticated;
+grant execute on function public.okflow_sync(text) to authenticated;
 
 -- Agreement with others, for the caller only, over the caller's 1,000 most recently answered cards: on each
 -- of those that at least two other people answered and where most of them gave the same answer, does the
