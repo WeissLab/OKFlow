@@ -169,7 +169,10 @@ label { font-weight: 700; }
 .status.warn { color: var(--toss); }
 .keys { display: none; }
 /* On touch screens the whole area swipes, so the three buttons give way to a reminder of the directions. */
-.swipehint { display: none; justify-content: space-between; font-weight: 700; font-size: 0.9rem; padding-inline: 4px; }
+.swipehint { display: none; justify-content: space-between; font-weight: 700; font-size: 1.1rem; }
+/* each direction sits on its side of the card: not sure above it, reject and keep below, left and right */
+.swipehint.up { justify-content: center; }
+.swipehint span { padding: 8px 16px; border-radius: 999px; border: 2px solid currentColor; background: color-mix(in srgb, currentColor 10%, var(--surface)); }
 .swipehint .toss { color: var(--toss); } .swipehint .unsure { color: var(--unsure); } .swipehint .keep { color: var(--keep); }
 @media (pointer: coarse) { .actions { display: none; } .swipehint { display: flex; } }
 @media (hover: hover) and (pointer: fine) { .keys { display: block; } }
@@ -254,7 +257,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
 .coach-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 .coach .fb { font-weight: 700; }
 .coach .fb.ok { color: var(--keep); } .coach .fb.no { color: var(--toss); }
-.labeller.result .actions, .labeller.result .swipehint { display: none; }
+.labeller.result .actions, .labeller.result .swipehint { display: none !important; }
 .labeller.coaching .card { max-width: calc((100dvh - 360px) * 2.1); }
 .labeller.coaching .card.single { width: calc(min(100%, (100dvh - 360px) * 2.1) / 2 + 8px); }
 @media (hover: hover) and (pointer: fine) {
@@ -345,6 +348,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       <p id="coachText"></p>
       <p class="fb" id="coachFb" hidden></p>
     </div>
+    <p class="swipehint up"><span class="unsure">↑ Not sure</span></p>
     <div class="stage">
       <div class="card" id="card">
         <div class="panes"><div class="pane"><i id="paneBf"></i></div><div class="pane"><i id="paneFl"></i></div></div>
@@ -362,7 +366,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       <button class="big keep" id="keepBtn" type="button">Keep <kbd>→</kbd></button>
     </div>
     <button class="go" type="button" id="coachNext" hidden><span class="lbl">Next</span> <kbd class="mouseonly">Enter</kbd></button>
-    <p class="swipehint"><span class="toss">← reject</span><span class="unsure">↑ not sure</span><span class="keep">keep →</span></p>
+    <p class="swipehint"><span class="toss">← Reject</span><span class="keep">Keep →</span></p>
     <p class="status" id="status"></p>
     <p class="keys"><span class="keys-title">⌨ Keyboard shortcuts</span> <kbd>→</kbd> keep <kbd>←</kbd> reject <kbd>↑</kbd> not sure <kbd>Return</kbd> back <kbd>↓</kbd> forward <kbd>P</kbd> pause <kbd>I</kbd> instructions <kbd>+</kbd><kbd>−</kbd> zoom</p>
   </section>
@@ -380,7 +384,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     <button class="go" type="button" id="bonusBtn" hidden><span class="lbl">Bonus round</span> <kbd class="mouseonly">B</kbd></button>
     <p class="muted small" id="bonusText" hidden>Each of those cells comes back twice more, flipped a way you haven't seen. It helps us tell which answer is right.</p>
     <button type="button" class="shareBtn">Share OKFlow</button>
-    <p class="muted small shareAlt" hidden><a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fokflow.weisslab.ca%2F" target="_blank" rel="noopener">Share on Facebook</a> · <button class="linkish copyLink" type="button">Copy link</button></p>
+    <p class="muted small shareAlt" hidden><button class="linkish copyLink" type="button">Copy link</button></p>
     <button type="button" id="doneBoard"><span class="lbl">See the leaderboard</span> <kbd class="mouseonly">L</kbd></button>
     <button type="button" id="reviewBtn"><span class="lbl">Back to the last cell</span> <kbd class="mouseonly">Return</kbd></button>
   </section>
@@ -403,7 +407,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     <button type="button" id="pausedQuiz"><span class="lbl">Practise with a score</span> <kbd class="mouseonly">S</kbd></button>
     <button type="button" id="pausedBoard"><span class="lbl">See the leaderboard</span> <kbd class="mouseonly">L</kbd></button>
     <button type="button" class="shareBtn">Share OKFlow</button>
-    <p class="muted small shareAlt" hidden><a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fokflow.weisslab.ca%2F" target="_blank" rel="noopener">Share on Facebook</a> · <button class="linkish copyLink" type="button">Copy link</button></p>
+    <p class="muted small shareAlt" hidden><button class="linkish copyLink" type="button">Copy link</button></p>
   </section>
 </div>
 
@@ -1058,7 +1062,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     screen("labeller"); show(BASE.length);
   });
 
-  // ---- sharing: the device's own share menu where there is one, else Facebook or the link ----
+  // ---- sharing: the device's own share menu where there is one, else the link to copy ----
   const SHARE = { title: "OKFlow", text: "Swipe right on cells that are in focus. Help the Weiss Lab find the sharp ones, one swipe at a time.", url: "https://okflow.weisslab.ca/" };
   for (const b of document.querySelectorAll(".shareBtn")) b.addEventListener("click", async () => {
     if (navigator.share) {
