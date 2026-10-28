@@ -609,8 +609,9 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     const slot = (kind) => out.push(`~${kind}${n++}`);
     if (round) for (let i = 0; i < 8; i++) slot("p");
     let spots = new Set();
+    const ys = base.map((k, p) => (typeOf(k) === "y" ? p : -1)).filter((p) => p >= 0);
     for (let p = s0; p < base.length; p++) {
-      const q = p - s0, yeast = typeOf(base[p]) === "y";   // no practice cells among the yeast yet
+      const q = p - s0, yeast = ys.length && p >= ys[0] && p <= ys[ys.length - 1];   // no practice cells in the yeast stretch yet
       if (q % 50 === 0) {
         spots = new Set();
         while (spots.size < 3) spots.add(q + 8 + Math.floor(rnd() * 42));
@@ -1263,8 +1264,8 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   function welcomeBack() {
     const d = nDone(), back = d > 0, next = firstUnanswered(0);
     let last = -1;
-    for (let p = N - 1; p >= 0; p--) if (votes[DISPLAY[p]]) { last = p; break; }
-    const gap = next !== null && next < last ? DISPLAY.slice(0, last).filter((k) => !votes[k]).length : 0;
+    for (let p = N - 1; p >= 0; p--) if (votes[cardAt(p)]) { last = p; break; }
+    const gap = next !== null && next < last ? DISPLAY.slice(0, last).filter((k) => !isSlot(k) && !votes[k]).length : 0;
     const plan = next === null ? "You've answered every card."
       : gap ? `New cells were added since you started, and they come first (${gap.toLocaleString()} cards). ` +
               `Then you'll carry on where you left off, skipping every card you've already answered.`
