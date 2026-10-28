@@ -151,7 +151,6 @@ label { font-weight: 700; }
 .card.fly { transition: transform .23s ease-in, opacity .23s ease-in; }
 .card.settle { transition: transform .2s ease-out; }
 .legend { display: grid; grid-template-columns: 1fr 1fr; color: var(--scope-ink); font-size: 0.8rem; padding-top: 6px; text-align: center; }
-.item { position: absolute; top: 14px; left: 16px; font-size: 0.75rem; color: var(--scope-ink); font-variant-numeric: tabular-nums; background: rgb(0 0 0 / 0.5); padding: 1px 7px; border-radius: 6px; }
 .zoomed { position: absolute; top: 14px; right: 16px; font-size: 0.75rem; color: var(--scope-ink); background: rgb(0 0 0 / 0.5); padding: 1px 7px; border-radius: 6px; border: 0; }
 .stamp { position: absolute; font-family: var(--display); font-weight: 800; font-size: 1.5rem; padding: 2px 12px; border: 3px solid; border-radius: 10px; opacity: 0; background: rgb(0 0 0 / 0.45); pointer-events: none; }
 .stamp.keep { top: 18px; right: 18px; color: var(--keep); border-color: var(--keep); transform: rotate(8deg); }
@@ -320,7 +319,6 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       <div class="card" id="card">
         <div class="panes"><div class="pane"><i id="paneBf"></i></div><div class="pane"><i id="paneFl"></i></div></div>
         <div class="legend"><span>Brightfield</span><span>Fluorescence</span></div>
-        <span class="item" id="itemNo">#1</span>
         <button class="zoomed" id="zoomReset" type="button" hidden>1×</button>
         <span class="stamp keep" id="stampKeep">KEEP</span>
         <span class="stamp toss" id="stampToss">REJECT</span>
@@ -509,7 +507,6 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     cardPanes($("paneBf"), $("paneFl"), sheetUrl(s), SHEET_W, SHEET_H, (j % COLS) * (2 * TILE + GAP), Math.floor(j / COLS) * TILE);
     card.classList.toggle("single", bfOnly(k));
     applyZoom();
-    $("itemNo").textContent = `#${pos + 1}`;
     const v = votes[k]?.v;
     $("was").textContent = v ? `You said ${WORD[v]}. Pick again to change it.` : "";
     for (const w of ["keep", "toss", "unsure"]) $(w + "Btn").classList.toggle("on", v === w);
@@ -795,7 +792,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     if (stats) drawConsist(hist, pairs.length, CONSIST_EVERY - d % CONSIST_EVERY);
     else {
       const t = document.createElement("p"); t.className = "consist-head teaser";
-      t.textContent = `🔒 Your self-consistency in ${CONSIST_EVERY - d % CONSIST_EVERY} more cells`;
+      t.textContent = `🔒 See your self-consistency in ${CONSIST_EVERY - d % CONSIST_EVERY} more cells`;
       $("mConsist").replaceChildren(t);
     }
     if (d < AGREE_AT) {
@@ -1091,13 +1088,21 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   preload("sheets/guide.png");
 
   // ---- returning on this device: say up front that nothing is lost, even though the instructions come again ----
+  // Cells added to the set after someone started go early in the order (cards.json), so they can come back to a
+  // card well before their furthest one: say why, and that they then carry on where they were.
   function welcomeBack() {
     const d = nDone(), back = d > 0, next = firstUnanswered(0);
-    const where = next === null ? "you've answered every card" : `you'll carry on from card ${(next + 1).toLocaleString()}`;
+    let last = -1;
+    for (let p = N - 1; p >= 0; p--) if (votes[DISPLAY[p]]) { last = p; break; }
+    const gap = next !== null && next < last ? DISPLAY.slice(0, last).filter((k) => !votes[k]).length : 0;
+    const plan = next === null ? "You've answered every card."
+      : gap ? `New cells were added since you started, and they come first (${gap.toLocaleString()} cards). ` +
+              `Then you'll carry on where you left off, skipping every card you've already answered.`
+      : "You'll carry on where you left off.";
     $("welcomeBack").hidden = $("guideBack").hidden = !back;
     $("welcomeBack").textContent = `Welcome back${name ? ", " + name : ""}! Your ${d.toLocaleString()} answers are saved. ` +
-      `You'll see the instructions again as a quick refresher, then ${where}.`;
-    $("guideBack").textContent = `Just a refresher: your ${d.toLocaleString()} answers are saved and ${where}.`;
+      `You'll see the instructions again as a quick refresher. ${plan}`;
+    $("guideBack").textContent = `Just a refresher: your ${d.toLocaleString()} answers are saved. ${plan}`;
     gate();
     if ($("beginBtn").querySelector(".lbl").textContent !== "Back to labelling") {
       $("beginBtn").querySelector(".lbl").textContent = back ? "Continue labelling" : "Start labelling";
