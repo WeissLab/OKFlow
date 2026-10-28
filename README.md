@@ -49,19 +49,31 @@ Each browser signs in anonymously, and the page keeps the person's place and
 any unsent answers on that device, sending them when it's back online.
 
 Through the public key, the page can only add rows under its own anonymous id
-(answers only once that device has said it's a member) and read the leaderboard
-(names and counts). It can't read, change or delete answers or emails.
+(answers only once that device has said it's a member), read the leaderboard
+(scrambled handles and counts) and read back its own person's latest answers. It can't
+read anyone else's answers, and can't change or delete answers or read emails.
 
 **Switching device:** "switch device" on the labelling screen shows a one-time
 code (15 minutes). Entering it under the name box on another device links that
 device to the same person (table `okflow_people`) and brings over the person's
 name and latest answers, so they continue where they were. Both devices then
-count as one person on the leaderboard and in the analysis.
+count as one person on the leaderboard and in the analysis. The new device asks
+first: **move here** (the default: the device that made the code is let go, so it
+can't add answers, and it clears its storage the next time it opens) or **keep both**
+(both stay linked). Linked devices keep in step: each one fetches the person's latest
+answers when it opens and when it comes back to the foreground.
 
 ## Set up (once)
 
-Done 2026-10-25: Supabase organization WeissLab, project OKFlow (`mflrlsqsawvuyhfxzajc`);
-DNS record `okflow` in Cloudflare (proxied). The steps are kept for rebuilding it.
+Done 2026-10-25: Supabase organization WeissLab; DNS record `okflow` in Cloudflare (proxied).
+Moved 2026-10-28 to project OKFlow (`dtesevyqeskycmkiglex`) in Canada (Central), `ca-central-1`,
+with the Data API on, new tables not exposed automatically and automatic RLS on; the first
+project (`mflrlsqsawvuyhfxzajc`, us-east-1) was renamed OKFlowTest. The analysis login connects
+through the session pooler `aws-1-ca-central-1.pooler.supabase.com:5432`. The steps are kept for
+rebuilding it. Supabase can't move a project between regions: a move is a new project, `setup.sql`
+and `analyst_access.sql` run there, the three tables (answers, people, signups) copied over, and
+the new URL and publishable key in `config.js`. Each device then signs in afresh and is linked to
+its earlier id by its first signup (`okflow_link_previous`).
 
 ### 1. Supabase
 
