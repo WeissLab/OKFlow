@@ -94,9 +94,7 @@ label { font-weight: 700; }
 .switch[aria-checked="false"] .sw-no, .switch[aria-checked="true"] .sw-yes { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / 0.2); }
 /* after a non-member leaves their email, the button becomes the thank-you */
 .go.thanked { background: var(--keep); border-color: var(--keep); color: #fff; font: 800 1.25rem/1.25 var(--display); padding: 18px; border-radius: 18px; text-wrap: balance; }
-.go.thanked kbd { display: none; }
-.switch:disabled { opacity: 1; cursor: default; }
-input[type=text], input[type=email] { font: inherit; width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.go.thanked kbd { display: none; }input[type=text], input[type=email] { font: inherit; width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
 
 /* the two image panels: brightfield and fluorescence, each a square crop of a sprite sheet */
 .panes { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
@@ -753,9 +751,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     queueSave(); loadBoard();
     $("codeForm").hidden = true; $("codeIn").value = "";
     say(`Welcome back${name ? ", " + name : ""}: your ${nDone()} answers are here. ` +
-        (said() === "false" ? "This device answered that it isn't a Weiss Lab member, so it can't continue."
-         : saysYes() ? "Enter your email and tap Next to continue."
-         : "To continue, switch to Yes if you're a member of the Weiss Lab, enter your email and tap Next."));
+        (saysYes() ? "Enter your email and tap Next to continue." : "To continue, switch to Yes if you're a member of the Weiss Lab, enter your email and tap Next."));
     welcomeBack();
   });
   $("boardBtn").addEventListener("click", () => openBoard("labeller"));
@@ -1022,30 +1018,25 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
 
   // ---- start: member or not, email and name, then the examples, then labelling ----
   // No (the default): only the email, to hear when the public version goes live. Yes: the email is needed to go on.
-  // Once answered, the answer and email are fixed on this device: a No stays a thank-you, a Yes goes straight on.
-  // Another device asks again, even after a code.
+  // A Yes is remembered on this device; another device asks again, even after a code.
   const saysYes = () => $("memberSw").getAttribute("aria-checked") === "true";
-  const said = () => (local.get("signup") || "").split("|")[0];   // "true" or "false" once answered here, else ""
   const THANKS = "Thank you! We'll email you when the public version goes live.";
+  let thanked = false;   // a non-member just left their email: the button becomes the thank-you until they change something
   function gate() {
-    const yes = saysYes(), thanked = said() === "false";
+    const yes = saysYes();
     $("start").classList.toggle("thanked", thanked);
     $("publicNote").hidden = yes; $("nameField").hidden = !yes;
     $("emailLabel").textContent = yes ? "Your email (needed to continue)" : "Your email";
     $("start").querySelector(".lbl").textContent = thanked ? THANKS : !yes ? "Let me know when it goes live"
       : nDone() ? "Next: quick refresher" : "Next: see examples";
   }
-  function lock() {
-    const s = said();
-    if (!s) return;
-    $("memberSw").setAttribute("aria-checked", s); $("memberSw").disabled = true;
-    $("email").readOnly = true;
-  }
+  $("memberSw").setAttribute("aria-checked", String(member()));
   $("email").value = local.get("email") || "";
-  lock(); gate();
+  gate();
+  $("email").addEventListener("input", () => { if (thanked) { thanked = false; gate(); } });
   $("memberSw").addEventListener("click", () => {
     $("memberSw").setAttribute("aria-checked", String(!saysYes()));
-    $("welcomeStatus").textContent = "";
+    $("welcomeStatus").textContent = ""; thanked = false;
     gate();
   });
   function signUp(email, yes) {   // one row per change of answer or email on this device
@@ -1058,13 +1049,12 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   $("nameForm").addEventListener("submit", (e) => {
     e.preventDefault();
     const email = $("email").value.trim(), yes = saysYes();
-    if (said() === "false") return;   // already thanked; the answer can't change
     if (!EMAIL.test(email)) {
       $("welcomeStatus").textContent = yes ? "Enter your email to continue." : "Enter your email and we'll let you know when it goes live.";
       $("email").focus(); return;
     }
-    signUp(email, yes); lock();
-    if (!yes) { $("welcomeStatus").textContent = ""; gate(); return; }
+    signUp(email, yes);
+    if (!yes) { $("welcomeStatus").textContent = ""; thanked = true; gate(); return; }
     $("welcomeStatus").textContent = "";
     name = $("who").value.trim();   // blank: anonymous
     local.set("name", name);
