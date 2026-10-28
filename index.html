@@ -503,6 +503,21 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   const ORIENTS = ["", "h", "v", "hv"];
   let pos = 0, shownAt = performance.now(), zoom = 1, flip = "";   // flip: the shown card's orientation
   let sb = null, uid = null, refused = false, boardRows = [];
+  // The anonymous sign-in is kept per Supabase project, so a move to a new project signs each device in afresh.
+  // The device's id on the project it used before is sent with its next signup, and the database links the two
+  // (setup.sql okflow_link_previous), so a labeller stays one person across the move.
+  const AUTH_KEY = (() => { try { return "okflow-auth:" + new URL(window.OKFLOW.supabaseUrl).hostname.split(".")[0]; } catch { return "okflow-auth"; } })();
+  const previousId = (() => {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k.startsWith("okflow-auth") || k === AUTH_KEY) continue;
+        const id = JSON.parse(localStorage.getItem(k))?.user?.id;
+        if (id) return id;
+      }
+    } catch {}
+    return null;
+  })();
   const readJSON = (k, fallback) => { try { return JSON.parse(local.get(k, true) || "null") ?? fallback; } catch { return fallback; } };
   // Practice cards (cards.json "practice": cells with a known answer, in three levels) sit in DISPLAY as
   // slots, "~" + kind + number: "p" the practice round before a new labeller's first cell, "a" the easy
@@ -968,7 +983,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       try { ({ error } = await sb.from(signup ? "okflow_signups" : "okflow_answers").upsert(batch, { onConflict: "id", ignoreDuplicates: true })); }
       catch (e) { error = { message: String(e) }; }
       if (!error) {
-        if (signup) { signupOut = null; local.set("signup_out", ""); continue; }
+        if (signup) { signupOut = null; local.set("signup_out", ""); local.set("signup_uid", uid); continue; }
         outbox.splice(0, batch.length); local.set("outbox", JSON.stringify(outbox), true);
         status(outbox.length ? `Saving… ${outbox.length} to go` : "Saved.");
         continue;
@@ -1501,9 +1516,9 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   });
   function signUp(email, yes) {   // one row per change of answer or email on this device
     local.set("email", email); local.set("member", yes ? "yes" : "");
-    if (local.get("signup") === `${yes}|${email}`) { flush(); return; }
+    if (local.get("signup") === `${yes}|${email}` && uid && local.get("signup_uid") === uid) { flush(); return; }
     local.set("signup", `${yes}|${email}`);
-    signupOut = { id: crypto.randomUUID(), email, member: yes }; local.set("signup_out", JSON.stringify(signupOut));
+    signupOut = { id: crypto.randomUUID(), email, member: yes, previous_labeller: previousId }; local.set("signup_out", JSON.stringify(signupOut));
     flush();
   }
   $("nameForm").addEventListener("submit", (e) => {
@@ -1628,7 +1643,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       return;
     }
     try {
-      sb = sb || window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, { auth: { storageKey: "okflow-auth", persistSession: true, autoRefreshToken: true } });
+      sb = sb || window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, { auth: { storageKey: AUTH_KEY, persistSession: true, autoRefreshToken: true } });
       let { data: { session } } = await sb.auth.getSession();
       if (!session) {
         const { data, error } = await sb.auth.signInAnonymously();
@@ -1636,6 +1651,13 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
         session = data.session;
       }
       uid = session.user.id;
+      // a member's device that is new to this project (or signed up before signups were kept per sign-in)
+      // says again that it's a member, so the database takes its answers
+      const email = local.get("email");
+      if (member() && email && !signupOut && local.get("signup_uid") !== uid) {
+        signupOut = { id: crypto.randomUUID(), email, member: true, previous_labeller: previousId };
+        local.set("signup_out", JSON.stringify(signupOut));
+      }
     } catch {
       uid = null;
       setTimeout(connect, connectWait); connectWait = Math.min(60000, connectWait * 2);

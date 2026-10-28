@@ -14,6 +14,11 @@
 -- It cannot read, change or delete any answer. Read everything from the
 -- Supabase dashboard (Table Editor > okflow_answers > Export to CSV).
 
+-- The page reaches the schema through the Data API. Granted here rather than relying on Supabase's
+-- defaults, so it holds on a project made with "Automatically expose new tables" off; every table and
+-- function below still grants only what the page needs.
+grant usage on schema public to anon, authenticated;
+
 create table if not exists public.okflow_answers (
   id          uuid primary key,                      -- made by the page, so a resent answer is stored once
   set_id      text not null check (length(set_id) between 1 and 40),
@@ -40,6 +45,9 @@ create table if not exists public.okflow_signups (
   member    boolean not null,                        -- true: says they're a member of the Weiss Lab
   signed_at timestamptz not null default now()
 );
+-- The device's id on the Supabase project it used before, when OKFlow moved to a new project (the page sends
+-- it with the device's first signup here); okflow_link_previous, below, links the two ids as one person.
+alter table public.okflow_signups add column if not exists previous_labeller uuid;
 alter table public.okflow_signups enable row level security;
 revoke all on table public.okflow_signups from public, anon, authenticated;
 grant insert on table public.okflow_signups to authenticated;
@@ -245,3 +253,29 @@ as $$
 $$;
 revoke all on function public.okflow_agreement(text) from public, anon, authenticated;
 grant execute on function public.okflow_agreement(text) to authenticated;
+
+-- After a move to a new Supabase project, every device signs in afresh and gets a new id. Its first signup
+-- carries its id on the old project, whose rows were copied here; that links the new id to the same person,
+-- so the person's answers, leaderboard count and device codes carry on. Only a device not linked yet, and
+-- only to an id that has answers here. The ids are random and known only to the device that holds them.
+create or replace function public.okflow_link_previous()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.previous_labeller is not null and new.previous_labeller <> new.labeller
+     and not exists (select 1 from public.okflow_people p where p.labeller = new.labeller)
+     and exists (select 1 from public.okflow_answers a where a.labeller = new.previous_labeller) then
+    insert into public.okflow_people (labeller, person)
+      values (new.labeller, public.okflow_person(new.previous_labeller))
+      on conflict (labeller) do nothing;
+  end if;
+  return new;
+end
+$$;
+revoke all on function public.okflow_link_previous() from public, anon, authenticated;
+drop trigger if exists okflow_link_previous on public.okflow_signups;
+create trigger okflow_link_previous after insert on public.okflow_signups
+  for each row execute function public.okflow_link_previous();
