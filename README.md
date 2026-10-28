@@ -14,7 +14,7 @@ Live at **https://okflow.weisslab.ca** (and https://weisslab.ca/okflow, which re
 |---|---|
 | `index.html` | The whole page: name, examples, labelling, milestones every 50 cards, leaderboard |
 | `config.js` | The Supabase project URL and publishable key |
-| `cards.json` | The label set's id and the card order. A card is the cell number, its flip (`h` left-right, `v` upside down, `hv` both) and `b` when it shows brightfield only |
+| `cards.json` | The label set's id and the card order. A card is the cell number, its flip (`h` left-right, `v` upside down, `hv` both) and `b` when it shows brightfield only. Also each cell's type (one letter per cell: CD34+, U2OS, HEK293, T cells, yeast) and the practice cells: cells with a known answer (keep or reject, a level 1-3 and a short reason) that the page mixes in to keep labellers calibrated |
 | `sheets/` | The cell images, lossless PNG: `sheet_NN.png` holds cells 100·NN+1 to 100·NN+100, five per row, each 80 px brightfield + 2 px gap + 80 px fluorescence; `guide.png` holds the nine examples |
 | `setup.sql` | The Supabase tables, their rules, the leaderboard and the device codes. Safe to rerun after an update |
 | `CNAME` | The custom domain for GitHub Pages |

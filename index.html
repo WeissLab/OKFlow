@@ -240,6 +240,12 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
 @keyframes pile { from { transform: translateY(-14px); opacity: 0; } }
 @keyframes pop { from { transform: scale(0) rotate(-40deg); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .award, .award.new { animation: none; } }
+.tbox { gap: 12px; max-width: 460px; width: 100%; }
+.tbox h2 { font-size: 1.8rem; }
+.tbox .note { text-align: left; }
+.texamples { display: grid; gap: 8px; width: 100%; text-align: left; }
+.texamples .ex { grid-template-columns: 50% 1fr; }
+.was.look { color: var(--toss); font-weight: 700; }
 .mbox .big-n { font-family: var(--display); font-weight: 800; font-size: 4rem; line-height: 1; font-variant-numeric: tabular-nums; }
 @media (prefers-reduced-motion: reduce) { .card.fly, .card.settle, .bar > i { transition: none; } .score-n.bump { animation: none; } }
 </style>
@@ -355,7 +361,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   </section>
 
   <section class="done" id="paused" hidden>
-    <h1>Paused</h1>
+    <h1 id="pausedTitle">Paused</h1>
     <p class="muted" id="pausedText"></p>
     <ol class="board mini" id="pBoard" aria-label="Leaderboard" hidden style="margin-inline: auto"></ol>
     <button class="go" type="button" id="resumeBtn"><span class="lbl">Resume</span> <kbd class="mouseonly">Enter</kbd></button>
@@ -364,6 +370,19 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     <button type="button" class="shareBtn">Share OKFlow</button>
     <p class="muted small shareAlt" hidden><a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fokflow.weisslab.ca%2F" target="_blank" rel="noopener">Share on Facebook</a> · <button class="linkish copyLink" type="button">Copy link</button></p>
   </section>
+</div>
+
+<!-- a new kind of cell: shown the first time this device meets each cell type -->
+<div class="milestone" id="typeIntro" hidden>
+  <div class="mbox tbox">
+    <p class="score-label" id="tKicker">New cells</p>
+    <h2 id="tTitle">Meet your first cells</h2>
+    <p id="tAbout"></p>
+    <p class="note keepnote fact"><strong>Did you know?</strong> <span id="tFact"></span></p>
+    <p class="note" id="tRules" hidden></p>
+    <div class="texamples" id="tExamples" hidden></div>
+    <button class="go" type="button" id="tGo"><span class="lbl">Let's go</span> <kbd class="mouseonly">Enter</kbd></button>
+  </div>
 </div>
 
 <div class="milestone" id="milestone" hidden>
@@ -445,7 +464,16 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   let pos = 0, shownAt = performance.now(), zoom = 1;
   let sb = null, uid = null, refused = false, boardRows = [];
   const readJSON = (k, fallback) => { try { return JSON.parse(local.get(k, true) || "null") ?? fallback; } catch { return fallback; } };
-  const key = () => DISPLAY[pos];
+  // Practice cards (cards.json "practice": cells with a known answer, in three levels) sit in DISPLAY as
+  // slots, "~" + kind + number: "p" the practice round before a new labeller's first cell, "a" the easy
+  // anchors at the start of each stretch of 50 cells, "r" refreshers at random places in between. A slot
+  // gets its card when first shown (easy for anchors, at the labeller's level otherwise) and keeps it.
+  let PRACTICE = {}, LEVELS = { 1: [], 2: [], 3: [] }, TYPES = "";
+  let slots = {}, prac = { level: 1, streak: 0, hist: [], alerted: -99 };
+  const isSlot = (k) => k[0] === "~";
+  const cardAt = (p) => (isSlot(DISPLAY[p]) ? slots[DISPLAY[p].slice(2)] || null : DISPLAY[p]);
+  const key = () => cardAt(pos);
+  const typeOf = (k) => TYPES[itemOf(k) - 1] || "c";
   $("who").value = name;
 
   // ---- images ----
@@ -503,24 +531,138 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   }
   function show(p) {
     pos = p;
+    if (isSlot(DISPLAY[p]) && !slots[DISPLAY[p].slice(2)]) {
+      slots[DISPLAY[p].slice(2)] = pickPractice(DISPLAY[p][1]);
+      local.set("slots", JSON.stringify(slots), true);
+    }
     const k = key(), it = itemOf(k) - 1, s = Math.floor(it / PER_SHEET), j = it % PER_SHEET;
+    if (introduce(k)) return;
     cardPanes($("paneBf"), $("paneFl"), sheetUrl(s), SHEET_W, SHEET_H, (j % COLS) * (2 * TILE + GAP), Math.floor(j / COLS) * TILE);
     card.classList.toggle("single", bfOnly(k));
     applyZoom();
     const v = votes[k]?.v;
     $("was").textContent = v ? `You said ${WORD[v]}. Pick again to change it.` : "";
     for (const w of ["keep", "toss", "unsure"]) $(w + "Btn").classList.toggle("on", v === w);
-    for (let a = 1; a <= 3; a++) if (pos + a < N) preload(sheetUrl(Math.floor((itemOf(DISPLAY[pos + a]) - 1) / PER_SHEET)));
+    $("was").classList.remove("look");
+    for (let a = 1; a <= 3; a++) if (pos + a < N && cardAt(pos + a)) preload(sheetUrl(Math.floor((itemOf(cardAt(pos + a)) - 1) / PER_SHEET)));
     render();
     shownAt = performance.now();
   }
 
   const nDone = () => Object.keys(votes).length;
   function firstUnanswered(from) {
-    for (let p = from; p < N; p++) if (!votes[DISPLAY[p]]) return p;
-    for (let p = 0; p < from; p++) if (!votes[DISPLAY[p]]) return p;
+    for (let p = from; p < N; p++) if (!votes[cardAt(p)]) return p;
+    for (let p = 0; p < from; p++) if (!votes[cardAt(p)]) return p;
     return null;
   }
+
+  // ---- practice: which card a slot gets, and how the level moves ----
+  function pickPractice(kind) {
+    const lv = kind === "a" ? 1 : prac.level;
+    const used = Object.values(slots), uses = (i) => used.filter((k) => itemOf(k) === i).length;
+    const want = Math.random() < 0.5 ? "keep" : "toss";   // half keep, half reject, whatever the level
+    let pool = LEVELS[lv].filter((i) => PRACTICE[i].v === want);
+    if (!pool.length) pool = LEVELS[lv];
+    const least = Math.min(...pool.map(uses));
+    const cands = pool.filter((i) => uses(i) === least), i = cands[Math.floor(Math.random() * cands.length)];
+    const free = ORIENTS.flatMap((o) => [`${i}${o}`, `${i}${o}b`]).filter((k) => !used.includes(k));
+    return free[Math.floor(Math.random() * free.length)] || `${i}`;
+  }
+  // Nothing says right or wrong, except "take another look" when an obvious (level 1) card gets the opposite
+  // answer. Three right in a row step the level up; a wrong one steps it down; not sure leaves it.
+  const LOOK = {
+    sharp: "Take another look: this is a sharp, whole single cell. Its edge is crisp.",
+    "cut off": "Take another look: part of this cell runs off the edge of the image.",
+    blur: "Take another look: this cell is out of focus. Its edge is soft and hazy.",
+  };
+  function practiceAnswer(k, v) {
+    const pr = PRACTICE[itemOf(k)], ok = v === pr.v, miss = v !== "unsure" && !ok, extreme = miss && pr.lv === 1;
+    prac.hist.push({ k, ok, miss, x: extreme, lv: pr.lv });
+    if (ok) { prac.streak++; if (prac.streak >= 3 && prac.level < 3) { prac.level++; prac.streak = 0; } }
+    else { prac.streak = 0; if (miss) prac.level = Math.max(1, prac.level - 1); }
+    local.set("prac", JSON.stringify(prac), true);
+    return extreme ? LOOK[pr.why] : null;
+  }
+  // Several easy ones missed lately: suggest a breather (at most once every 8 practice cards).
+  function drifting() {
+    const h = prac.hist, n = h.length;
+    if (n - prac.alerted < 8) return false;
+    const recent = h.slice(-6), easy = h.filter((r) => r.lv === 1).slice(-6);
+    const bad = recent.filter((r) => r.miss).length >= 3 || easy.filter((r) => r.x).length >= 2;
+    if (bad) { prac.alerted = n; local.set("prac", JSON.stringify(prac), true); }
+    return bad;
+  }
+  // The card order with practice slots, fixed for this device: from where it first got practice cards on.
+  function withPractice(base, seed) {
+    if (!Object.keys(PRACTICE).length) return base;
+    let s0 = local.get("prac_s0", true), round = local.get("prac_round", true) === "1";
+    if (s0 === null) {
+      const f = base.findIndex((k) => !votes[k]);
+      s0 = f < 0 ? base.length : f; round = nDone() === 0;
+      local.set("prac_s0", String(s0), true); local.set("prac_round", round ? "1" : "0", true);
+    }
+    s0 = Number(s0);
+    let s = (seed ^ 0x9e3779b9) >>> 0;
+    const rnd = () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; };
+    const out = base.slice(0, s0);
+    let n = 0;
+    const slot = (kind) => out.push(`~${kind}${n++}`);
+    if (round) for (let i = 0; i < 8; i++) slot("p");
+    let spots = new Set();
+    for (let p = s0; p < base.length; p++) {
+      const q = p - s0, yeast = typeOf(base[p]) === "y";   // no practice cells among the yeast yet
+      if (q % 50 === 0) {
+        spots = new Set();
+        while (spots.size < 3) spots.add(q + 8 + Math.floor(rnd() * 42));
+        if ((q > 0 || !round) && !yeast) for (let i = 0; i < 3; i++) slot("a");
+      }
+      if (spots.has(q) && !yeast) slot("r");
+      out.push(base[p]);
+    }
+    return out;
+  }
+
+  // ---- a new kind of cell: what it is and a fun fact, the first time this device meets one ----
+  const KINDS = {
+    c: { name: "CD34+ blood stem cells", about: "Stem cells from human blood and bone marrow. Every blood cell you have, red, white or platelet, comes from cells like these, and they're the cells given in a bone-marrow transplant.",
+         fact: "Your bone marrow makes about two million new red blood cells every second." },
+    u: { name: "U2OS cells", about: "A human bone cancer cell line, grown in labs around the world since 1964.",
+         fact: "U2OS cells spread out flat and wide, which makes them a favourite for microscopy." },
+    h: { name: "HEK293 cells", about: "Human embryonic kidney cells, one of the most used cell lines in biology.",
+         fact: "The 293 in the name is said to come from the 293rd experiment in the lab that made the line, in 1973." },
+    t: { name: "T cells", about: "Immune cells that recognise and kill infected or cancerous cells.",
+         fact: "The T stands for thymus, the small organ behind your breastbone where T cells learn to tell your own cells from invaders." },
+    y: { name: "yeast", about: "Baker's yeast: single cells, much smaller than ours, that divide by budding. A daughter cell grows out of the mother as a small bud.",
+         fact: "The yeast that raises bread and brews beer shares many genes with us, so it's used to study how our DNA is packed and repaired. Several Nobel Prizes came from work on yeast.",
+         rules: "A small bud is part of the cell: keep it if it's sharp. Two cells stuck together, or a second lobe nearly as big as the first: reject. Blurry or cut off: reject, as before.",
+         examples: [["Single cell, sharp", "keep"], ["Small bud: still one cell", "keep"], ["Two cells stuck together", "toss"], ["Out of focus", "toss"], ["Cut off at the edge", "toss"]] },
+  };
+  let seenTypes = [];
+  function introduce(k) {
+    const t = typeOf(k);
+    if (seenTypes.includes(t) || !KINDS[t]) return false;
+    seenTypes.push(t); local.set("types_seen", JSON.stringify(seenTypes), true);
+    const kind = KINDS[t], first = seenTypes.length === 1;
+    $("tKicker").textContent = first ? "Your first cells" : "New cells";
+    $("tTitle").textContent = first ? `Meet the ${kind.name}` : "Hey now, super swiper! Ready for a changeup?";
+    $("tAbout").textContent = (first ? "" : `Next up: ${kind.name}. `) + kind.about;
+    $("tFact").textContent = kind.fact;
+    $("tRules").hidden = !kind.rules; $("tRules").textContent = kind.rules || "";
+    const ex = $("tExamples"); ex.replaceChildren(); ex.hidden = !kind.examples;
+    (kind.examples || []).forEach(([caption, v], r) => {
+      const row = document.createElement("div"); row.className = "ex";
+      const panes = document.createElement("div"); panes.className = "panes"; panes.setAttribute("role", "img"); panes.setAttribute("aria-label", caption);
+      const [a, b] = [0, 1].map(() => { const p = document.createElement("div"); p.className = "pane"; const i = document.createElement("i"); p.append(i); panes.append(p); return i; });
+      cardPanes(a, b, `sheets/guide_${t}.png`, 2 * TILE + GAP, kind.examples.length * TILE, 0, r * TILE);
+      const p = document.createElement("p");
+      const chip = document.createElement("span"); chip.className = "chip " + v; chip.textContent = v === "keep" ? "Keep" : "Reject";
+      const c = document.createElement("span"); c.textContent = caption;
+      p.append(chip, c); row.append(panes, p); ex.append(row);
+    });
+    $("typeIntro").hidden = false; $("tGo").focus();
+    return true;
+  }
+  $("tGo").addEventListener("click", () => { $("typeIntro").hidden = true; show(pos); });
   function render() {
     const d = nDone(), s = $("score");
     if (s.textContent !== String(d)) { s.textContent = d; s.classList.remove("bump"); void s.offsetWidth; s.classList.add("bump"); }
@@ -577,6 +719,11 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     const at = new Date().toISOString();
     votes[k] = { v, ms: Math.round(ms), at, ...(prev.length ? { prev } : {}) };
     queueSave({ id: crypto.randomUUID(), set_id: SET, name, card: k, answer: v, decide_ms: Math.round(ms), seq: ++seq, answered_at: at });
+    if (!old && PRACTICE[itemOf(k)] && isSlot(DISPLAY[pos])) {
+      const look = practiceAnswer(k, v);
+      if (drifting()) { breather(); return; }
+      if (look) { show(pos); $("was").textContent = look; $("was").classList.add("look"); return; }   // same card again
+    }
     const next = firstUnanswered(pos + 1);
     if (next === null) { finish(); return; }
     show(next);
@@ -880,8 +1027,16 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   }
   // Pausing needs no saving step: every answer is already saved as it's given.
   $("mPause").addEventListener("click", () => pauseNow());
+  // the alert: a few easy cards missed lately, so a break and the examples are offered (nothing is said to be wrong)
+  function breather() {
+    const next = firstUnanswered(pos + 1);
+    if (next !== null) pos = next;
+    screen("paused"); $("pausedTitle").textContent = "Time for a breather?";
+    $("pausedText").textContent = "A few of the easier cells just now got answers we didn't expect. That happens when eyes get tired. " +
+      "Take a short break, or have another look at the examples, then carry on.";
+  }
   function pauseNow() {
-    closeMilestone(); screen("paused");
+    closeMilestone(); screen("paused"); $("pausedTitle").textContent = "Paused";
     $("pausedText").textContent = `Your ${nDone()} answers are saved` +
       (outbox.length ? ` on this device and will be sent once you're online` : "") +
       `. You can close this page; it opens where you left off on this device.`;
@@ -974,7 +1129,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   function resetStamps() { for (const id of ["stampKeep", "stampToss", "stampUnsure"]) $(id).style.opacity = 0; }
   let flying = false;
   function fly(v) {
-    if (flying || !$("milestone").hidden) return;
+    if (flying || !$("milestone").hidden || !$("typeIntro").hidden) return;
     const ms = performance.now() - shownAt;   // from the card appearing to the decision
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) { card.style.transform = ""; resetStamps(); answer(v, ms); return; }
     flying = true;
@@ -1011,6 +1166,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   };
   document.addEventListener("keydown", (e) => {
     if (e.ctrlKey || e.metaKey || e.altKey || e.target.tagName === "INPUT") return;   // typing in a box is just typing
+    if (!$("typeIntro").hidden) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); press("tGo")(); } return; }
     if (!$("milestone").hidden) {   // the break: P pauses; once the countdown is over, any other key keeps going
       if (["Shift", "Control", "Alt", "Meta", "Tab", "CapsLock"].includes(e.key)) return;
       e.preventDefault();
@@ -1089,10 +1245,14 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   fetch("cards.json").then((r) => r.json()).then((o) => {
     SET = o.set_id; BASE = o.cells ? layout(o) : o.display; SHEET_V = o.sheet_v || {};
     votes = readJSON("votes", {}); outbox = readJSON("outbox", []); seq = Number(local.get("seq", true)) || 0;
-    DISPLAY = BASE.concat(readJSON("bonus", [])); N = DISPLAY.length;
+    TYPES = o.types || "";
+    for (const [i, v, lv, why] of o.practice || []) { PRACTICE[i] = { v, lv, why }; LEVELS[lv].push(i); }
+    slots = readJSON("slots", {}); prac = { ...prac, ...readJSON("prac", {}) };
+    seenTypes = readJSON("types_seen", null) ?? [...new Set(Object.keys(votes).map(typeOf))];
+    DISPLAY = withPractice(BASE, Number(local.get("order_seed")) || 1).concat(readJSON("bonus", [])); N = DISPLAY.length;
     welcomeBack();
     $("beginBtn").disabled = false;
-    preload(sheetUrl(Math.floor((itemOf(DISPLAY[0]) - 1) / PER_SHEET)));
+    if (BASE.length) preload(sheetUrl(Math.floor((itemOf(BASE[0]) - 1) / PER_SHEET)));
     connect();
   }).catch(() => { $("welcomeStatus").textContent = "Couldn't load the cell list. Reload the page to try again."; });
   preload("sheets/guide.png");
