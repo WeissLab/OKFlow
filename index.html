@@ -854,18 +854,28 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     const last = hist[hist.length - 1];
     head.innerHTML = `<span class="score-label">Self-consistency</span> <b></b>`;
     head.querySelector("b").textContent = `${last.pct}%`;
-    const ns = "http://www.w3.org/2000/svg", W = 260, H = 58, P = 8, L = 30;
-    const lo = Math.min(50, Math.floor(Math.min(...hist.map((h) => h.pct)) / 10) * 10);
-    const x = (i) => L + (hist.length > 1 ? i * (W - L - P) / (hist.length - 1) : (W - L - P) / 2);
-    const y = (v) => P + (100 - v) * (H - 2 * P) / (100 - lo);
+    // A line chart of the score over cards answered. The y axis fits the scores (whole 5% steps, at least 10% tall,
+    // never past 0-100%), so small changes show; the x axis runs from the first saved score to now.
+    const ns = "http://www.w3.org/2000/svg", W = 280, H = 104, P = 10, L = 34, B = 28;
+    const vals = hist.map((h) => h.pct);
+    let lo = Math.max(0, Math.floor((Math.min(...vals) - 2) / 5) * 5), hi = Math.min(100, Math.ceil((Math.max(...vals) + 2) / 5) * 5);
+    if (hi - lo < 10) { lo = Math.max(0, hi - 10); hi = Math.min(100, lo + 10); }
+    const d0 = hist[0].d, d1 = last.d;
+    const x = (d) => d1 > d0 ? L + (d - d0) * (W - L - P) / (d1 - d0) : L + (W - L - P) / 2;
+    const y = (v) => P + (hi - v) * (H - P - B) / (hi - lo);
     const svg = document.createElementNS(ns, "svg"); svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-    svg.setAttribute("role", "img"); svg.setAttribute("aria-label", `Self-consistency at each break: ${hist.map((h) => h.pct + "%").join(", ")}`);
+    svg.setAttribute("role", "img"); svg.setAttribute("aria-label", `Self-consistency by cards answered: ${hist.map((h) => `${h.pct}% at ${h.d}`).join(", ")}`);
     const el = (tag, attrs, text) => { const e = document.createElementNS(ns, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); if (text) e.textContent = text; svg.append(e); return e; };
-    for (const v of [lo, 100]) { el("line", { x1: L, x2: W - P, y1: y(v), y2: y(v), class: "grid" }); el("text", { x: L - 4, y: y(v) + 3, "text-anchor": "end", class: "axis" }, `${v}%`); }
-    if (hist.length > 1) el("polyline", { points: hist.map((h, i) => `${x(i)},${y(h.pct)}`).join(" "), class: "line" });
-    hist.forEach((h, i) => el("circle", { cx: x(i), cy: y(h.pct), r: i === hist.length - 1 ? 4.5 : 3, class: i === hist.length - 1 ? "dot now" : "dot" }));
+    for (let v = lo, step = hi - lo <= 20 ? 5 : 10; v <= hi; v += step) {   // gridlines on round values, at most five
+      el("line", { x1: L, x2: W - P, y1: y(v), y2: y(v), class: "grid" });
+      el("text", { x: L - 5, y: y(v) + 3, "text-anchor": "end", class: "axis" }, `${v}%`);
+    }
+    for (const d of d1 > d0 ? [d0, d1] : [d1]) el("text", { x: x(d), y: H - B + 13, "text-anchor": d1 > d0 ? (d === d0 ? "start" : "end") : "middle", class: "axis" }, d.toLocaleString());
+    el("text", { x: L + (W - L - P) / 2, y: H - 2, "text-anchor": "middle", class: "axis" }, "cards answered");
+    if (hist.length > 1) el("polyline", { points: hist.map((h) => `${x(h.d)},${y(h.pct)}`).join(" "), class: "line" });
+    hist.forEach((h, i) => el("circle", { cx: x(h.d), cy: y(h.pct), r: i === hist.length - 1 ? 5 : 3.5, class: i === hist.length - 1 ? "dot now" : "dot" }));
     const cap = document.createElement("p"); cap.className = "consist-cap";
-    cap.textContent = "how often you gave a cell the same answer both times, at each break";
+    cap.textContent = "Share of cells you answered the same way on both showings, measured every 50 cards. The filled dot is now.";
     box.append(head, svg, cap);
   }
   // Pausing needs no saving step: every answer is already saved as it's given.
