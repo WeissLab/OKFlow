@@ -760,6 +760,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
 
   // ---- milestone: every 50 cards, a 5-second break with cells flowing past ----
   let flowAnim = 0;
+  const CONSIST_EVERY = 150, AGREE_AT = 1000;
   function milestone(d) {
     const cheer = CHEERS[(d / 50 - 1) % CHEERS.length];
     $("mN").textContent = d; $("mTitle").textContent = cheer;
@@ -787,11 +788,10 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     }
     // the stats themselves are a reward: self-consistency every 150 cards, agreement with others from 1,000
     // (and both at the end), each saying in between how far off it is
-    const CONSIST_EVERY = 150, AGREE_AT = 1000;
     const stats = d % CONSIST_EVERY === 0 || d === AGREE_AT;
     $("mUnlocked").hidden = !stats;
     document.querySelector(".mbox").classList.toggle("unlock", stats);
-    if (stats) drawConsist(hist, pairs.length);
+    if (stats) drawConsist(hist, pairs.length, CONSIST_EVERY - d % CONSIST_EVERY);
     else {
       const t = document.createElement("p"); t.className = "consist-head teaser";
       t.textContent = `🔒 Your self-consistency in ${CONSIST_EVERY - d % CONSIST_EVERY} more cells`;
@@ -846,11 +846,11 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     const sm = document.createElement("small"); sm.textContent = `from ${cards.toLocaleString()} of your last ${Math.min(nDone(), 1000).toLocaleString()} answers that other people also labelled (${others} others so far)`;
     el.append("Interesting: you agree with others ", b, " of the time on this dataset.", document.createElement("br"), sm);
   }
-  function drawConsist(hist, nPairs) {
+  function drawConsist(hist, nPairs, left) {   // left: images until the next self-consistency break
     const box = $("mConsist"); box.replaceChildren();
     const head = document.createElement("p"); head.className = "consist-head";
-    if (nPairs < 20 || !hist.length) {
-      head.textContent = `Your self-consistency score appears once 20 cells have come back a second time (${nPairs} so far).`;
+    if (nPairs < 20 || !hist.length) {   // 20 cells answered on both showings, the least for a score
+      head.textContent = `Your self-consistency score appears every ${CONSIST_EVERY} images analyzed, once enough cells have come back a second time. Next check in ${left} images.`;
       box.append(head); return;
     }
     const last = hist[hist.length - 1];
