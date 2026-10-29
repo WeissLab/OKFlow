@@ -19,7 +19,7 @@ Live at **https://okflow.weisslab.ca** (and https://weisslab.ca/okflow, which re
 | `config.js` | The Supabase project URL and publishable key |
 | `cards.json` | The label set's id and the card order. A card is the cell number, its flip (`h` left-right, `v` upside down, `hv` both) and `b` when it shows brightfield only. Also each cell's type (one letter per cell: CD34+, U2OS, HEK293, T cells, yeast) and the practice cells: cells with a known answer (keep or reject, a level 1-3 and a short reason) that the page mixes in to keep labellers calibrated, and that its practice mode (scored, never saved) draws from |
 | `sheets/` | The cell images, lossless PNG: `sheet_NN.png` holds cells 100·NN+1 to 100·NN+100, five per row, each 80 px brightfield + 2 px gap + 80 px fluorescence; `guide.png` holds the nine examples |
-| `setup.sql` | The Supabase tables, their rules, the leaderboard and the device codes. Safe to rerun after an update. The study's part (consent, deletion codes, withdrawal, consensus, the 12-character device code, the checks on what people type) was run in the SQL Editor on 2026-10-29 and isn't in this file yet |
+| `setup.sql` | The Supabase tables, their rules, the leaderboard and the device codes. Safe to rerun after an update. It includes the study (consent, deletion codes, withdrawal, consensus, the Student report), the 12-character device code and the checks on what people type, first run in parts in the SQL Editor on 2026-10-29 |
 | `CNAME` | The custom domain for GitHub Pages |
 | `logo/` | The logo as vector files and the scripts that draw it (`make_logo.py`, then `make_share.py` for the link preview `share.png`) |
 | `apple-touch-icon.png`, `icon-512.png` | The cell icon for phone home screens |

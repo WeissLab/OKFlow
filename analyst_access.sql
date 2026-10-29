@@ -31,3 +31,11 @@ drop policy if exists "analysis reads all links" on public.okflow_people;
 create policy "analysis reads all links" on public.okflow_people for select to okflow_reader using (true);
 drop policy if exists "analysis reads all signups" on public.okflow_signups;
 create policy "analysis reads all signups" on public.okflow_signups for select to okflow_reader using (true);
+
+-- The set settings and the exclusions too (never consents, deletion codes, withdrawals or emails).
+-- Run setup.sql first: these tables are made there.
+grant select on table public.okflow_sets, public.okflow_excluded to okflow_reader;
+drop policy if exists "analysis reads sets" on public.okflow_sets;
+create policy "analysis reads sets" on public.okflow_sets for select to okflow_reader using (true);
+drop policy if exists "analysis reads exclusions" on public.okflow_excluded;
+create policy "analysis reads exclusions" on public.okflow_excluded for select to okflow_reader using (true);
