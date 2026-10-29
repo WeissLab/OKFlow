@@ -1594,6 +1594,10 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   // ---- the card order: the warm-up first, then stretches of cells that every labeller shares, each
   // stretch in this device's own order (scripts/reorder_swipe_set.py); a cell's second card comes
   // its lag in cells after its first. The order is fixed per device, so a reload never reshuffles.
+  // Yeast is off the deck for now (too confusing; Lucien, 2026-10-28). Their cells stay in cards.json and their answers
+  // stay saved; taking them out after the layout keeps every other card in the order each device already had.
+  const SHOW_YEAST = false;
+  const shown = (k) => SHOW_YEAST || typeOf(k) !== "y";
   function layout(o) {
     let seed = Number(local.get("order_seed"));
     if (!seed) { seed = 1 + Math.floor(Math.random() * 2 ** 31); local.set("order_seed", String(seed)); }
@@ -1614,13 +1618,13 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     $("welcomeStatus").textContent = "You moved to another device, so this one has let go of your answers. Anyone can start afresh here.";
   }
   fetch("cards.json").then((r) => r.json()).then((o) => {
-    SET = o.set_id; BASE = o.cells ? layout(o) : o.display; SHEET_V = o.sheet_v || {};
+    SET = o.set_id; TYPES = o.types || ""; SHEET_V = o.sheet_v || {};
+    BASE = (o.cells ? layout(o) : o.display).filter(shown);
     votes = readJSON("votes", {}); outbox = readJSON("outbox", []); seq = Number(local.get("seq", true)) || 0;
-    TYPES = o.types || "";
     for (const [i, v, lv, why] of o.practice || []) { PRACTICE[i] = { v, lv, why }; LEVELS[lv].push(i); }
     slots = readJSON("slots", {}); prac = { ...prac, ...readJSON("prac", {}) };
     seenTypes = readJSON("types_seen", null) ?? [...new Set(Object.keys(votes).map(typeOf))];
-    DISPLAY = withPractice(BASE, Number(local.get("order_seed")) || 1).concat(readJSON("bonus", [])); N = DISPLAY.length;
+    DISPLAY = withPractice(BASE, Number(local.get("order_seed")) || 1).concat(readJSON("bonus", []).filter(shown)); N = DISPLAY.length;
     welcomeBack();
     $("beginBtn").disabled = false;
     if (BASE.length) preload(sheetUrl(Math.floor((itemOf(BASE[0]) - 1) / PER_SHEET)));
