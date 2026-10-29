@@ -12,11 +12,14 @@ Live at **https://okflow.weisslab.ca** (and https://weisslab.ca/okflow, which re
 
 | File | What |
 |---|---|
-| `index.html` | The whole page: name, examples, labelling, milestones every 50 cards, leaderboard |
+| `index.html` | The whole page: name, examples, labelling, milestones every 50 cards, leaderboard. With `?study`, the research study: information sheet and consent first, a private deletion code, no name, English and French |
+| `fr.js` | The French text of the study page, keyed by the English |
+| `study.json` | The study set's id, versions (they must match the set's row in the database) and card order: cells from the lab set, no yeast or practice cells, made by `scripts/make_study_set.py` in the analysis repository |
+| `fonts/`, `vendor/` | The fonts and the Supabase script, served from this site so a visitor's browser contacts no one else; their licences are `fonts/OFL.txt` and `vendor/supabase-js-LICENSE.txt` |
 | `config.js` | The Supabase project URL and publishable key |
 | `cards.json` | The label set's id and the card order. A card is the cell number, its flip (`h` left-right, `v` upside down, `hv` both) and `b` when it shows brightfield only. Also each cell's type (one letter per cell: CD34+, U2OS, HEK293, T cells, yeast) and the practice cells: cells with a known answer (keep or reject, a level 1-3 and a short reason) that the page mixes in to keep labellers calibrated, and that its practice mode (scored, never saved) draws from |
 | `sheets/` | The cell images, lossless PNG: `sheet_NN.png` holds cells 100·NN+1 to 100·NN+100, five per row, each 80 px brightfield + 2 px gap + 80 px fluorescence; `guide.png` holds the nine examples |
-| `setup.sql` | The Supabase tables, their rules, the leaderboard and the device codes. Safe to rerun after an update |
+| `setup.sql` | The Supabase tables, their rules, the leaderboard and the device codes. Safe to rerun after an update. The study's part (consent, deletion codes, withdrawal, consensus, the 12-character device code, the checks on what people type) was run in the SQL Editor on 2026-10-29 and isn't in this file yet |
 | `CNAME` | The custom domain for GitHub Pages |
 | `logo/` | The logo as vector files and the scripts that draw it (`make_logo.py`, then `make_share.py` for the link preview `share.png`) |
 | `apple-touch-icon.png`, `icon-512.png` | The cell icon for phone home screens |
@@ -54,7 +57,7 @@ Through the public key, the page can only add rows under its own anonymous id
 read anyone else's answers, and can't change or delete answers or read emails.
 
 **Switching device:** "switch device" on the labelling screen shows a one-time
-code (15 minutes). Entering it under the name box on another device links that
+code of 12 letters and numbers (15 minutes; at most 5 wrong tries per 15 minutes). Entering it under the name box on another device links that
 device to the same person (table `okflow_people`) and brings over the person's
 name and latest answers, so they continue where they were. Both devices then
 count as one person on the leaderboard and in the analysis. The new device asks

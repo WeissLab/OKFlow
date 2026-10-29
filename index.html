@@ -20,8 +20,7 @@ if (location.protocol === "http:" && !/^(localhost|127\.0\.0\.1)$/.test(location
 <meta name="theme-color" content="#10151c" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="logo/okflow-cell.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
 /* One screen, thumb-first: back / Cellcount / forward on top, the cell card in the middle, the three choices at the bottom. */
 :root {
@@ -271,12 +270,35 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
 .card.judge .pane:first-child { outline: 3px solid #ffd84d; outline-offset: -3px; }
 .card.judge #legBf { color: #ffd84d; font-weight: 700; }
 @media (prefers-reduced-motion: reduce) { .card.fly, .card.settle, .bar > i { transition: none; } .score-n.bump { animation: none; } }
+/* the research study (?study): language, information and consent, the deletion code, your contributions */
+.langs { display: inline-flex; gap: 4px; }
+.langs button { padding: 4px 10px; font-size: 0.8rem; }
+.langs button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.studypage { overflow-y: auto; gap: 12px; padding-bottom: 8px; }
+.sheet { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 16px; font-size: 0.92rem; line-height: 1.4; display: flex; flex-direction: column; gap: 6px; }
+.sheet h3 { font: 700 1rem var(--body); margin: 8px 0 0; }
+.sheet h3:first-child, .sheet .draft + h3 { margin-top: 0; }
+.draft { background: #ffd84d; color: #3d2c00; border-radius: 8px; padding: 6px 10px; font-weight: 700; font-size: 0.85rem; }
+.check { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; cursor: pointer; }
+.check input { width: 1.25em; height: 1.25em; margin-top: 0.15em; flex: none; accent-color: var(--keep); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; }
+.emailform { display: flex; gap: 8px; }
+.emailform input { flex: 1; min-width: 0; }
+.danger { color: var(--toss); border-color: var(--toss); }
+.go.danger { background: var(--toss); border-color: var(--toss); color: #fff; }
+#printArea { display: none; }
+@media print {
+  body { background: #fff; color: #000; padding: 0; }
+  .app, .milestone { display: none !important; }
+  #printArea { display: block !important; font: 11pt/1.4 var(--body); }
+  #printArea .code { border: 2px dashed #000; font-size: 20pt; }
+}
 </style>
 </head>
 <body>
 <div class="app">
   <section class="welcome" id="welcome">
-    <div class="brandrow"><h2 class="brand"><svg class="wordmark" role="img" aria-label="OKFlow" xmlns="http://www.w3.org/2000/svg" viewBox="-12 -14 560 130"><circle cx="52" cy="50" r="43.5" fill="var(--cyto)" stroke="var(--keep)" stroke-width="17"/><circle cx="45.07" cy="56.93" r="25.80" fill="var(--nucleus)"/><polygon points="118,0 148,0 148,40 176,0 198,0 164,46 200,100 166,100 148,70 148,100 118,100" fill="var(--keep)"/><g transform="translate(36 0)"><path d="M196 14 C204 4 186 6 192 6 C210 11 232 9 252 5 C258 4 263 3 268 2" fill="none" stroke="var(--ink)" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/><path d="M222 8 C220 36 218 66 212 86 C208 96 198 99 191 92" fill="none" stroke="var(--ink)" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/><path d="M202 52 C236 50 296 42 312 22 C318 6 300 0 296 14 C292 34 292 68 296 86 C300 98 312 100 324 92 C330 86 334 74 338 62 M362 44 C344 40 330 54 332 72 C334 92 360 98 370 82 C378 70 376 50 362 44 C372 44 384 42 396 42 C402 42 404 46 406 52 L418 91.5 L432 56 L446 91.5 L460 52 C462 44 470 38 482 36" fill="none" stroke="var(--ink)" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/></g></svg></h2><button class="theme" id="themeBtn1" type="button">Dark mode</button></div>
+    <div class="brandrow"><h2 class="brand"><svg class="wordmark" role="img" aria-label="OKFlow" xmlns="http://www.w3.org/2000/svg" viewBox="-12 -14 560 130"><circle cx="52" cy="50" r="43.5" fill="var(--cyto)" stroke="var(--keep)" stroke-width="17"/><circle cx="45.07" cy="56.93" r="25.80" fill="var(--nucleus)"/><polygon points="118,0 148,0 148,40 176,0 198,0 164,46 200,100 166,100 148,70 148,100 118,100" fill="var(--keep)"/><g transform="translate(36 0)"><path d="M196 14 C204 4 186 6 192 6 C210 11 232 9 252 5 C258 4 263 3 268 2" fill="none" stroke="var(--ink)" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/><path d="M222 8 C220 36 218 66 212 86 C208 96 198 99 191 92" fill="none" stroke="var(--ink)" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/><path d="M202 52 C236 50 296 42 312 22 C318 6 300 0 296 14 C292 34 292 68 296 86 C300 98 312 100 324 92 C330 86 334 74 338 62 M362 44 C344 40 330 54 332 72 C334 92 360 98 370 82 C378 70 376 50 362 44 C372 44 384 42 396 42 C402 42 404 46 406 52 L418 91.5 L432 56 L446 91.5 L460 52 C462 44 470 38 482 36" fill="none" stroke="var(--ink)" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/></g></svg></h2><span class="row"><span class="langs" id="langs" role="group" aria-label="Language / Langue" hidden><button type="button" data-lang="en" lang="en">English</button><button type="button" data-lang="fr" lang="fr">Français</button></span><button class="theme" id="themeBtn1" type="button">Dark mode</button></span></div>
     <p class="note keepnote" id="welcomeBack" hidden></p>
     <h1>Is this cell image good enough to analyse?</h1>
     <p class="muted">One cell at a time from an imaging flow cytometer: brightfield on the left, fluorescence (stained DNA, for studying DNA damage and conformation) on the right. Base your answer on the brightfield; the fluorescence, when it's shown, is an extra guide. <span class="touchonly">Swipe anywhere on the screen. Pinch to zoom.</span><span class="mouseonly">On a computer, use the arrow keys: <kbd>→</kbd> keep, <kbd>←</kbd> reject, <kbd>↑</kbd> not sure.</span></p>
@@ -300,100 +322,177 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     <p class="muted small">Started on another phone or computer? <button class="linkish" type="button" id="haveCodeBtn">Enter your code</button> · Labelled on the earlier OKCell page? <button class="linkish" type="button" id="importBtn">Import those answers</button><input type="file" id="importFile" accept=".json,application/json" hidden></p>
     <form class="codeform" id="codeForm" hidden>
       <input type="text" id="codeIn" maxlength="9" placeholder="ABCD-1234" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Code from your other device">
-      <button type="submit" id="codeGo">Continue</button>
+      <button type="submit" id="codeGo" data-t>Continue</button>
     </form>
     <fieldset class="codechoice" id="codeChoice" hidden>
-      <label><input type="radio" name="codeMode" value="move" checked> <b>Move here</b> <span>the other device lets go: it forgets your answers and can't add more (best for a shared computer)</span></label>
-      <label><input type="radio" name="codeMode" value="keep"> <b>Keep both</b> <span>both stay yours and keep in step</span></label>
+      <label><input type="radio" name="codeMode" value="move" checked> <b data-t>Move here</b> <span data-t>the other device lets go: it forgets your answers and can't add more (best for a shared computer)</span></label>
+      <label><input type="radio" name="codeMode" value="keep"> <b data-t>Keep both</b> <span data-t>both stay yours and keep in step</span></label>
     </fieldset>
     <p class="status" id="welcomeStatus"></p>
+  </section>
+
+  <!-- The research study (okflow.weisslab.ca/?study): the information sheet and consent before anything is
+       saved or any sign-in; the brand row moves here from the welcome screen. -->
+  <section class="page studypage" id="consent" hidden>
+    <h1 data-t>Help us sort cell images</h1>
+    <p class="muted" data-t>OKFlow is a research study at Polytechnique Montréal. You look at pictures of cells and swipe: keep the sharp ones, reject the blurry or broken ones. Please read the information below first.</p>
+    <div class="sheet" id="infoSheet"></div>
+    <p><button class="linkish" type="button" id="printInfo" data-t>Print or save the information sheet</button></p>
+    <label class="check"><input type="checkbox" id="adultChk"> <span data-t>I am 18 or older.</span></label>
+    <label class="check"><input type="checkbox" id="agreeChk"> <span data-t>I have read the information above and I agree to take part.</span></label>
+    <button class="go" type="button" id="agreeBtn" disabled><span class="lbl" data-t>I agree: let's start</span></button>
+    <p class="status" id="consentStatus"></p>
+    <p class="muted small"><span data-t>Under 18?</span> <button class="linkish" type="button" id="localBtn" data-t>Try OKFlow without saving anything</button></p>
+    <p class="muted small" id="studyCodeRow"><span data-t>Already taking part on another device?</span> <button class="linkish" type="button" id="studyCodeBtn" data-t>Enter your device code</button></p>
+    <p class="muted small"><span data-t>Want your answers deleted?</span> <button class="linkish" type="button" id="delCodeBtn" data-t>Use your deletion code</button></p>
+    <form class="codeform" id="delForm" hidden>
+      <input type="text" id="delIn" maxlength="24" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Deletion code">
+      <button type="submit" id="delGo" data-t>Delete</button>
+    </form>
+    <button class="go danger" type="button" id="delYes" hidden><span class="lbl" data-t>Yes, delete all the answers for this code</span></button>
+  </section>
+
+  <section class="page studypage" id="codePage" hidden>
+    <h1 id="codeTitle"></h1>
+    <p class="muted" data-t>Keep it somewhere safe. With this code you can delete all your answers at any time, from any device. We keep only a scrambled version of it, so we can't show it to you again, and we can't tell which answers are yours.</p>
+    <p class="code" id="delCode">…</p>
+    <div class="row"><button type="button" id="delCopy" data-t>Copy</button><button type="button" id="delPrint" data-t>Print</button><button type="button" id="delMail" data-t>Email it to myself</button></div>
+    <p class="muted small" data-t>“Email it to myself” opens your own email app with the code filled in. We never see your address.</p>
+    <label class="check"><input type="checkbox" id="savedChk"> <span data-t>I've saved my code.</span></label>
+    <div class="sheet" id="contactBox">
+      <p><strong data-t>Optional: a summary when the study ends</strong></p>
+      <p class="muted small" data-t>Leave an email address to receive a plain-language summary at the end of the study and to be asked whether you'd like to be acknowledged (you'd give your name then). It's stored on its own, with nothing that links it to you or your answers, and deleted once those emails are sent.</p>
+      <form class="emailform" id="contactForm" novalidate>
+        <input type="email" id="contactIn" autocomplete="email" maxlength="254" placeholder="you@example.com" spellcheck="false" autocapitalize="off" aria-label="Email address">
+        <button type="submit" id="contactAdd" data-t>Add</button>
+      </form>
+      <p class="muted small"><button class="linkish" type="button" id="contactRemove" data-t>Remove this address instead</button></p>
+      <p class="status" id="contactStatus"></p>
+    </div>
+    <button class="go" type="button" id="codeNext" disabled><span class="lbl" id="codeNextLbl"></span></button>
+  </section>
+
+  <section class="page studypage" id="myData" hidden>
+    <h1 data-t>Your contributions</h1>
+    <p class="muted" id="myDataText"></p>
+    <div class="sheet" id="myDataCode">
+      <p><strong data-t>Lost your deletion code?</strong></p>
+      <p class="muted small" data-t>Get a new one. The old code stops working.</p>
+      <p><button type="button" id="newCodeBtn" data-t>Get a new code</button></p>
+    </div>
+    <div class="sheet" id="myDataDelete">
+      <p><strong data-t>Delete my contributions</strong></p>
+      <p class="muted small" data-t>Deletes all your answers from the study, on every device linked to you. It can't be undone. Results already published stay as they are.</p>
+      <p class="row"><button type="button" class="danger" id="withdrawBtn" data-t>Delete my contributions</button><button type="button" class="go danger" id="withdrawYes" hidden data-t>Yes, delete everything</button></p>
+    </div>
+    <div class="sheet" id="myDataLocal" hidden>
+      <p data-t>Nothing from this device is sent or saved for research: your answers stay on this device only.</p>
+      <p><button type="button" id="leaveLocal" data-t>I'm 18 or older: take part in the study instead</button></p>
+    </div>
+    <p><button class="linkish" type="button" id="readInfo" data-t>Read the information sheet</button></p>
+    <p class="status" id="myDataStatus"></p>
+    <button class="go" type="button" id="myDataBack"><span class="lbl" data-t>Back to labelling</span></button>
+  </section>
+
+  <section class="page studypage" id="infoPage" hidden>
+    <h1 data-t>Information sheet</h1>
+    <div class="sheet" id="infoSheet2"></div>
+    <p><button class="linkish" type="button" id="printInfo2" data-t>Print or save the information sheet</button></p>
+    <button class="go" type="button" id="infoBack"><span class="lbl" data-t>Back</span></button>
+  </section>
+
+  <section class="done" id="goodbye" hidden>
+    <h1 data-t>Your contributions are deleted</h1>
+    <p class="muted" id="goodbyeText"></p>
+    <button class="go" type="button" id="againBtn"><span class="lbl" data-t>Start again</span></button>
   </section>
 
   <section class="page" id="guide" hidden>
     <h1 id="guideTitle">Instructions</h1>
     <p class="note keepnote" id="guideBack" hidden></p>
-    <p class="muted small">New here, or want a recap? <button class="linkish" type="button" id="replayTut">Take the one-minute tutorial</button></p>
-    <p class="note keepnote"><strong>Base your answer on the brightfield</strong> (the grey image on the left). When the fluorescence image is shown too, use it as an extra guide, for example to tell one cell from two, or a cell from a bead or debris. Fluorescence often looks soft even when the cell is sharp.</p>
+    <p class="muted small"><span data-t>New here, or want a recap?</span> <button class="linkish" type="button" id="replayTut" data-t>Take the one-minute tutorial</button></p>
+    <p class="note keepnote" data-t><strong>Base your answer on the brightfield</strong> (the grey image on the left). When the fluorescence image is shown too, use it as an extra guide, for example to tell one cell from two, or a cell from a bead or debris. Fluorescence often looks soft even when the cell is sharp.</p>
     <div class="note keynote desktop-only">
       <div class="keypad" aria-hidden="true"><kbd class="k-up">↑</kbd><kbd class="k-left">←</kbd><kbd class="k-right">→</kbd></div>
-      <p><strong>On a computer, your arrow keys are shortcuts.</strong> <kbd>→</kbd> keep, <kbd>←</kbd> reject, <kbd>↑</kbd> not sure. <kbd>Return</kbd> goes back a card and <kbd>P</kbd> pauses: you never need the mouse.</p>
+      <p data-t><strong>On a computer, your arrow keys are shortcuts.</strong> <kbd>→</kbd> keep, <kbd>←</kbd> reject, <kbd>↑</kbd> not sure. <kbd>Return</kbd> goes back a card and <kbd>P</kbd> pauses: you never need the mouse.</p>
     </div>
-    <p class="muted">Some cards show the brightfield alone. Every cell comes back once, flipped or turned; just answer it again.</p>
-    <p class="note"><strong>Cut off = reject, even when it's sharp.</strong> If any part of the cell runs off the edge of the image, whether a sliver or half of it, reject it. Dark blue areas are outside the camera's view: a cell that runs into one is cut off too.</p>
+    <p class="muted" data-t>Some cards show the brightfield alone. Every cell comes back once, flipped or turned; just answer it again.</p>
+    <p class="note" data-t><strong>Cut off = reject, even when it's sharp.</strong> If any part of the cell runs off the edge of the image, whether a sliver or half of it, reject it. Dark blue areas are outside the camera's view: a cell that runs into one is cut off too.</p>
     <div class="scroll" id="examples"></div>
     <button class="go" type="button" id="beginBtn"><span class="lbl">Start labelling</span> <kbd class="mouseonly">Enter</kbd></button>
   </section>
 
   <section class="page" id="devicePage" hidden>
-    <h1>Continue on another device</h1>
-    <p class="muted">On the other phone or computer, open <strong>okflow.weisslab.ca</strong>, tap <em>Enter your code</em> under the name box and type this code. Your name and answers come with you and you carry on where you are. There you choose: <strong>move here</strong> (this device lets go: it forgets your answers and can't add more) or <strong>keep both</strong> (both stay yours and keep in step).</p>
+    <h1 data-t>Continue on another device</h1>
+    <p class="muted" id="deviceText"></p>
     <p class="code" id="codeOut">…</p>
     <p class="muted small" id="codeNote">Works once, for 15 minutes.</p>
-    <button class="go" type="button" id="deviceBack"><span class="lbl">Back</span> <kbd class="mouseonly">Enter</kbd></button>
+    <button class="go" type="button" id="deviceBack"><span class="lbl" data-t>Back</span> <kbd class="mouseonly">Enter</kbd></button>
   </section>
 
   <section class="page" id="boardPage" hidden>
-    <h1>Leaderboard</h1>
-    <p class="muted">Cells labelled so far.</p>
+    <h1 data-t>Leaderboard</h1>
+    <p class="muted" data-t>Cells labelled so far.</p>
+    <p class="muted small" data-t>Real names are not shown, for privacy.</p>
     <div class="scroll"><ol class="board" id="board"></ol></div>
     <button class="go" type="button" id="boardBack"><span class="lbl">Back to labelling</span> <kbd class="mouseonly">Enter</kbd></button>
   </section>
 
   <section class="labeller" id="labeller" hidden>
     <div class="top">
-      <button class="nav" id="backBtn" type="button">← Back</button>
+      <button class="nav" id="backBtn" type="button" data-t>← Back</button>
       <div class="progress">
-        <div class="score"><span class="score-label">Cellcount</span><span class="score-n" id="score">0</span></div>
+        <div class="score"><span class="score-label" data-t>Cellcount</span><span class="score-n" id="score">0</span></div>
         <div class="bar"><i id="barFill"></i></div>
-        <span class="count"><button class="linkish" id="guideBtn" type="button">instructions</button> · <button class="linkish" id="quizBtn" type="button">practice</button> · <button class="linkish" id="boardBtn" type="button">leaderboard</button> · <button class="linkish" id="deviceBtn" type="button">switch device</button> · <button class="linkish" id="themeBtn2" type="button">dark</button></span>
+        <span class="count"><button class="linkish" id="guideBtn" type="button" data-t>instructions</button> · <button class="linkish" id="quizBtn" type="button" data-t>practice</button> · <button class="linkish" id="boardBtn" type="button" data-t>leaderboard</button><span id="deviceItem"> · <button class="linkish" id="deviceBtn" type="button" data-t>switch device</button></span><span id="studyItems" hidden> · <button class="linkish" id="myDataBtn" type="button" data-t>my data</button> · <button class="linkish" id="langBtn" type="button"></button></span> · <button class="linkish" id="themeBtn2" type="button">dark</button></span>
       </div>
-      <button class="nav" id="fwdBtn" type="button">Forward →</button>
+      <button class="nav" id="fwdBtn" type="button" data-t>Forward →</button>
     </div>
     <div class="coach" id="coach" hidden>
-      <div class="coach-head"><span class="score-label" id="coachStep">Tutorial</span><button class="linkish" id="coachLeave" type="button" hidden>leave practice</button></div>
+      <div class="coach-head"><span class="score-label" id="coachStep">Tutorial</span><button class="linkish" id="coachLeave" type="button" hidden data-t>leave practice</button></div>
       <div class="bar"><i id="coachBar"></i></div>
       <p id="coachText"></p>
       <p class="fb" id="coachFb" hidden></p>
     </div>
-    <p class="swipehint up"><span class="unsure">↑ Not sure</span></p>
+    <p class="swipehint up"><span class="unsure" data-t>↑ Not sure</span></p>
     <div class="stage">
       <div class="card" id="card">
         <div class="panes"><div class="pane"><i id="paneBf"></i></div><div class="pane"><i id="paneFl"></i></div></div>
         <div class="legend"><span id="legBf">Brightfield</span><span id="legFl">Fluorescence</span></div>
         <button class="zoomed" id="zoomReset" type="button" hidden>1×</button>
-        <span class="stamp keep" id="stampKeep">KEEP</span>
-        <span class="stamp toss" id="stampToss">REJECT</span>
-        <span class="stamp unsure" id="stampUnsure">NOT SURE</span>
+        <span class="stamp keep" id="stampKeep" data-t>KEEP</span>
+        <span class="stamp toss" id="stampToss" data-t>REJECT</span>
+        <span class="stamp unsure" id="stampUnsure" data-t>NOT SURE</span>
       </div>
     </div>
     <p class="was" id="was"></p>
     <div class="actions">
-      <button class="big toss" id="tossBtn" type="button"><kbd>←</kbd> Reject</button>
-      <button class="big unsure" id="unsureBtn" type="button"><kbd>↑</kbd> Not sure</button>
-      <button class="big keep" id="keepBtn" type="button">Keep <kbd>→</kbd></button>
+      <button class="big toss" id="tossBtn" type="button" data-t><kbd>←</kbd> Reject</button>
+      <button class="big unsure" id="unsureBtn" type="button" data-t><kbd>↑</kbd> Not sure</button>
+      <button class="big keep" id="keepBtn" type="button" data-t>Keep <kbd>→</kbd></button>
     </div>
-    <button class="go" type="button" id="coachNext" hidden><span class="lbl">Next</span> <kbd class="mouseonly">Enter</kbd></button>
-    <p class="swipehint"><span class="toss">← Reject</span><span class="keep">Keep →</span></p>
+    <button class="go" type="button" id="coachNext" hidden><span class="lbl" data-t>Next</span> <kbd class="mouseonly">Enter</kbd></button>
+    <p class="swipehint"><span class="toss" data-t>← Reject</span><span class="keep" data-t>Keep →</span></p>
     <p class="status" id="status"></p>
-    <p class="keys"><span class="keys-title">⌨ Keyboard shortcuts</span> <kbd>→</kbd> keep <kbd>←</kbd> reject <kbd>↑</kbd> not sure <kbd>Return</kbd> back <kbd>↓</kbd> forward <kbd>P</kbd> pause <kbd>I</kbd> instructions <kbd>+</kbd><kbd>−</kbd> zoom</p>
+    <p class="keys" data-t><span class="keys-title">⌨ Keyboard shortcuts</span> <kbd>→</kbd> keep <kbd>←</kbd> reject <kbd>↑</kbd> not sure <kbd>Return</kbd> back <kbd>↓</kbd> forward <kbd>P</kbd> pause <kbd>I</kbd> instructions <kbd>+</kbd><kbd>−</kbd> zoom</p>
   </section>
 
   <section class="done" id="done" hidden>
-    <h1>All done. Thank you!</h1>
+    <h1 data-t>All done. Thank you!</h1>
     <p class="muted" id="doneText"></p>
     <div class="stats">
-      <p class="score-label">Self-consistency</p>
+      <p class="score-label" data-t>Self-consistency</p>
       <p class="big-n" id="consistPct">–</p>
       <p class="muted" id="consistText"></p>
       <p class="muted small" id="totalsText"></p>
       <p class="agree" id="doneAgree"></p>
     </div>
     <button class="go" type="button" id="bonusBtn" hidden><span class="lbl">Bonus round</span> <kbd class="mouseonly">B</kbd></button>
-    <p class="muted small" id="bonusText" hidden>Each of those cells comes back twice more, flipped a way you haven't seen. It helps us tell which answer is right.</p>
+    <p class="muted small" id="bonusText" hidden data-t>Each of those cells comes back twice more, flipped a way you haven't seen. It helps us tell which answer is right.</p>
     <button type="button" class="shareBtn">Share OKFlow</button>
     <p class="muted small shareAlt" hidden><button class="linkish copyLink" type="button">Copy link</button></p>
-    <button type="button" id="doneBoard"><span class="lbl">See the leaderboard</span> <kbd class="mouseonly">L</kbd></button>
-    <button type="button" id="reviewBtn"><span class="lbl">Back to the last cell</span> <kbd class="mouseonly">Return</kbd></button>
+    <button type="button" id="doneBoard"><span class="lbl" data-t>See the leaderboard</span> <kbd class="mouseonly">L</kbd></button>
+    <button type="button" id="reviewBtn"><span class="lbl" data-t>Back to the last cell</span> <kbd class="mouseonly">Return</kbd></button>
   </section>
 
   <section class="done" id="coachEnd" hidden>
@@ -409,14 +508,15 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     <h1 id="pausedTitle">Paused</h1>
     <p class="muted" id="pausedText"></p>
     <ol class="board mini" id="pBoard" aria-label="Leaderboard" hidden style="margin-inline: auto"></ol>
-    <button class="go" type="button" id="resumeBtn"><span class="lbl">Resume</span> <kbd class="mouseonly">Enter</kbd></button>
-    <button type="button" id="pausedGuide"><span class="lbl">Instructions</span> <kbd class="mouseonly">I</kbd></button>
-    <button type="button" id="pausedQuiz"><span class="lbl">Practise with a score</span> <kbd class="mouseonly">S</kbd></button>
-    <button type="button" id="pausedBoard"><span class="lbl">See the leaderboard</span> <kbd class="mouseonly">L</kbd></button>
+    <button class="go" type="button" id="resumeBtn"><span class="lbl" data-t>Resume</span> <kbd class="mouseonly">Enter</kbd></button>
+    <button type="button" id="pausedGuide"><span class="lbl" data-t>Instructions</span> <kbd class="mouseonly">I</kbd></button>
+    <button type="button" id="pausedQuiz"><span class="lbl" data-t>Practise with a score</span> <kbd class="mouseonly">S</kbd></button>
+    <button type="button" id="pausedBoard"><span class="lbl" data-t>See the leaderboard</span> <kbd class="mouseonly">L</kbd></button>
     <button type="button" class="shareBtn">Share OKFlow</button>
     <p class="muted small shareAlt" hidden><button class="linkish copyLink" type="button">Copy link</button></p>
   </section>
 </div>
+<div id="printArea"></div>
 
 <!-- a new kind of cell: shown the first time this device meets each cell type -->
 <div class="milestone" id="typeIntro" hidden>
@@ -424,36 +524,37 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     <p class="score-label" id="tKicker">New cells</p>
     <h2 id="tTitle">Meet your first cells</h2>
     <p id="tAbout"></p>
-    <p class="note keepnote fact"><strong>Did you know?</strong> <span id="tFact"></span></p>
+    <p class="note keepnote fact"><strong data-t>Did you know?</strong> <span id="tFact"></span></p>
     <p class="note" id="tRules" hidden></p>
     <div class="texamples" id="tExamples" hidden></div>
-    <button class="go" type="button" id="tGo"><span class="lbl">Let's go</span> <kbd class="mouseonly">Enter</kbd></button>
+    <button class="go" type="button" id="tGo"><span class="lbl" data-t>Let's go</span> <kbd class="mouseonly">Enter</kbd></button>
   </div>
 </div>
 
 <div class="milestone" id="milestone" hidden>
   <canvas id="flow"></canvas>
   <div class="mbox">
-    <p class="score-label">Cellcount</p>
+    <p class="score-label" data-t>Cellcount</p>
     <p class="big-n" id="mN">50</p>
     <h2 id="mTitle">You've got flow!</h2>
     <div class="awards" id="mAwards" aria-label="Your awards so far"></div>
-    <p class="note keepnote fact" id="mFact" hidden><strong>Did you know?</strong> <span id="mFactText"></span></p>
-    <p class="unlocked" id="mUnlocked" hidden>📊 Stats unlocked!</p>
+    <p class="note keepnote fact" id="mFact" hidden><strong data-t>Did you know?</strong> <span id="mFactText"></span></p>
+    <p class="unlocked" id="mUnlocked" hidden data-t>📊 Stats unlocked!</p>
     <div class="consist" id="mConsist"></div>
     <p class="agree" id="mAgree" hidden></p>
     <ol class="board mini" id="mBoard" aria-label="Leaderboard" hidden></ol>
-    <p class="muted" id="mText">Take a breath.</p>
+    <p class="muted" id="mText" data-t>Take a breath.</p>
     <div class="countdown" id="mCount" aria-live="polite">
       <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" class="track"/><circle cx="50" cy="50" r="44" class="ring" id="mRing"/></svg>
       <span id="mLeft">5</span>
     </div>
-    <button class="go" type="button" id="mGo" disabled><span class="lbl">Keep going</span> <kbd class="mouseonly">any key</kbd></button>
-    <button type="button" id="mPause"><span class="lbl">Pause for now</span> <kbd class="mouseonly">P</kbd></button>
+    <button class="go" type="button" id="mGo" disabled><span class="lbl" data-t>Keep going</span> <kbd class="mouseonly" data-t>any key</kbd></button>
+    <button type="button" id="mPause"><span class="lbl" data-t>Pause for now</span> <kbd class="mouseonly">P</kbd></button>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="vendor/supabase-js-2.45.4.js"></script>
+<script src="fr.js?v=2026-10-29b"></script>
 <script src="config.js"></script>
 <script>
 (() => {
@@ -476,6 +577,21 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   const AWARDS = ["🔬", "🧫", "🧬", "🧪", "🎯", "💡", "🔭", "🌟", "🚀", "🦠", "🧠", "🌊", "💎", "🎨", "🧲", "📸", "🎉",
     "🌈", "⚡", "🍀", "🔥", "🦉", "🐙", "🌋", "🛰️", "🎆", "🧭", "🪐", "🎻", "🦄"];
   const $ = (id) => document.getElementById(id);
+  // ---- the research study: okflow.weisslab.ca/?study is its own set (study.json), with the information sheet
+  // and consent before anything is saved, a deletion code, no names, and English or French. Without ?study
+  // the page is the lab's, in English, as before. ----
+  const STUDY = new URLSearchParams(location.search).has("study");
+  let LANG = "en";
+  // English text -> French (fr.js); {name} marks a value filled in.
+  const FR = window.OKFLOW_FR || {};
+  const t = (s, vars) => {
+    let r = s;
+    if (LANG === "fr") { if (FR[s] !== undefined) r = FR[s]; else t.missing.add(s); }
+    return vars ? r.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m)) : r;
+  };
+  t.missing = new Set();   // English shown on the French page (checked in testing)
+  if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.OKFLOW_MISSING = t.missing;
+  const num = (n) => Number(n).toLocaleString(LANG === "fr" ? "fr-CA" : undefined);
   // Per-set values (answers, outbox) are keyed by the set; name and theme are shared.
   const local = {
     get(k, perSet) { try { return localStorage.getItem("okflow:" + (perSet ? SET + ":" : "") + k); } catch { return null; } },
@@ -486,13 +602,14 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   function applyTheme(t) {
     if (t) document.documentElement.dataset.theme = t;
     const dark = t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-    $("themeBtn1").textContent = dark ? "Light mode" : "Dark mode";
-    $("themeBtn2").textContent = dark ? "light" : "dark";
+    $("themeBtn1").textContent = dark ? tr("Light mode") : tr("Dark mode");
+    $("themeBtn2").textContent = dark ? tr("light") : tr("dark");
     return dark;
   }
+  const tr = (s) => t(s);   // applyTheme's own t is the theme
   let dark = applyTheme(local.get("theme"));
   for (const b of ["themeBtn1", "themeBtn2"]) $(b).addEventListener("click", () => {
-    const t = dark ? "light" : "dark"; local.set("theme", t); dark = applyTheme(t);
+    const th = dark ? "light" : "dark"; local.set("theme", th); dark = applyTheme(th);
   });
 
   // card key -> {v: "keep" | "toss" | "unsure", ms: time to decide, at: ISO time,
@@ -500,12 +617,22 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   // A key is the item number, then its orientation ("" as acquired, "h" flipped left-right, "v" upside down,
   // "hv" both), then "b" when the card shows brightfield only: "404", "404vb", "37hvb", "37h".
   let votes = {}, outbox = [], seq = 0;   // read from this device once cards.json gives the set
-  let name = local.get("name") || "";
+  let name = STUDY ? "" : local.get("name") || "";   // the study asks for no name
   // The Weiss Lab member gate (setup.sql okflow_signups): answers go to the server only from a device whose
   // latest signup says "member", so they wait in the outbox until then. The signup itself waits in signupOut.
-  const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+  // An email and a name are checked and cleaned here exactly as the database does (study part 5), so the page
+  // never sends something it refuses: plain characters in an email; no control characters, < > " ` \ or a
+  // leading = + - @ (a formula in Excel) in a name.
+  const EMAIL = /^[A-Za-z0-9][A-Za-z0-9._%+'-]*@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
+  const cleanName = (s) => String(s || "").replace(/[<>"`\\]/g, "")
+
+    .replace(/[\u0000-\u001f\u007f-\u009f\u00ad\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/g, "").trim().replace(/^[-=+@\s]+/, "").slice(0, 60);
+
   const member = () => local.get("member") === "yes";   // confirmed with an email on this device
-  let signupOut = (() => { try { return JSON.parse(local.get("signup_out") || "null"); } catch { return null; } })();
+  let signupOut = STUDY ? null : (() => { try { return JSON.parse(local.get("signup_out") || "null"); } catch { return null; } })();
+  // The study: consentId is this person's consent (setup.sql okflow_consent), carried by every answer; LOCAL is the
+  // mode for under-18s, where nothing ever leaves the device (no sign-in, nothing sent).
+  let consentId = null, LOCAL = false, STUDY_VERSION = "", INFO_VERSION = "", MIN_PEOPLE = 5;
   let BASE = [], DISPLAY = [], N = 0;   // BASE: the set's cards (two showings per cell); DISPLAY adds any bonus round
   const ORIENTS = ["", "h", "v", "hv"];
   let pos = 0, shownAt = performance.now(), zoom = 1, flip = "";   // flip: the shown card's orientation
@@ -513,12 +640,15 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   // The anonymous sign-in is kept per Supabase project, so a move to a new project signs each device in afresh.
   // The device's id on the project it used before is sent with its next signup, and the database links the two
   // (setup.sql okflow_link_previous), so a labeller stays one person across the move.
-  const AUTH_KEY = (() => { try { return "okflow-auth:" + new URL(window.OKFLOW.supabaseUrl).hostname.split(".")[0]; } catch { return "okflow-auth"; } })();
+  // The study signs in separately from the lab page on the same browser, so a study participant is never the lab's person.
+  const AUTH_KEY = (() => { try { return "okflow-auth:" + new URL(window.OKFLOW.supabaseUrl).hostname.split(".")[0]; } catch { return "okflow-auth"; } })()
+    + (STUDY ? ":study" : "");
   const previousId = (() => {
+    if (STUDY) return null;
     try {
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (!k.startsWith("okflow-auth") || k === AUTH_KEY) continue;
+        if (!k.startsWith("okflow-auth") || k === AUTH_KEY || k.endsWith(":study")) continue;
         const id = JSON.parse(localStorage.getItem(k))?.user?.id;
         if (id) return id;
       }
@@ -565,22 +695,25 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       const ang = Math.atan2(ty - fy, tx - fx), head = (s) => `${tx - 7 * Math.cos(ang + s)},${ty - 7 * Math.sin(ang + s)}`;
       const shaft = `M${fx},${fy} L${tx - 2 * Math.cos(ang)},${ty - 2 * Math.sin(ang)}`, tip = `M${tx},${ty} L${head(0.45)} L${head(-0.45)} Z`;
       for (const [w, c] of [[4, "#000"], [2, "#ffd84d"]]) { el("path", { d: shaft, stroke: c, "stroke-width": w, fill: "none", "stroke-linecap": "round" }); el("path", { d: tip, fill: c, stroke: c, "stroke-width": w - 2 }); }
-      const half = label.length * 2.8, x = Math.min(80 - half - 1, Math.max(half + 1, fx));
-      el("text", { x, y: fy < 40 ? Math.max(9, fy - 3) : fy + 10, "text-anchor": "middle", class: "notetext" }).textContent = label;
+      const lab = t(label), half = lab.length * 2.8, x = Math.min(80 - half - 1, Math.max(half + 1, fx));
+      el("text", { x, y: fy < 40 ? Math.max(9, fy - 3) : fy + 10, "text-anchor": "middle", class: "notetext" }).textContent = lab;
     }
     return svg;
   }
-  $("examples").append(...GUIDE.map(([caption, v], k) => {
-    const ex = document.createElement("div"); ex.className = "ex";
-    const panes = document.createElement("div"); panes.className = "panes"; panes.setAttribute("role", "img"); panes.setAttribute("aria-label", caption);
-    const [a, b] = [0, 1].map(() => { const p = document.createElement("div"); p.className = "pane"; const i = document.createElement("i"); p.append(i); panes.append(p); return i; });
-    cardPanes(a, b, "sheets/guide.png", 2 * TILE + GAP, GUIDE.length * TILE, 0, k * TILE);
-    if (NOTES[k]) a.parentElement.append(noteSvg(NOTES[k]));
-    const p = document.createElement("p");
-    const chip = document.createElement("span"); chip.className = "chip " + v; chip.textContent = v === "keep" ? "Keep" : "Reject";
-    const t = document.createElement("span"); t.textContent = caption;
-    p.append(chip, t); ex.append(panes, p); return ex;
-  }));
+  function drawExamples() {
+    $("examples").replaceChildren(...GUIDE.map(([caption, v], k) => {
+      const ex = document.createElement("div"); ex.className = "ex";
+      const panes = document.createElement("div"); panes.className = "panes"; panes.setAttribute("role", "img"); panes.setAttribute("aria-label", t(caption));
+      const [a, b] = [0, 1].map(() => { const p = document.createElement("div"); p.className = "pane"; const i = document.createElement("i"); p.append(i); panes.append(p); return i; });
+      cardPanes(a, b, "sheets/guide.png", 2 * TILE + GAP, GUIDE.length * TILE, 0, k * TILE);
+      if (NOTES[k]) a.parentElement.append(noteSvg(NOTES[k]));
+      const p = document.createElement("p");
+      const chip = document.createElement("span"); chip.className = "chip " + v; chip.textContent = v === "keep" ? t("Keep") : t("Reject");
+      const c = document.createElement("span"); c.textContent = t(caption);
+      p.append(chip, c); ex.append(panes, p); return ex;
+    }));
+  }
+  drawExamples();
 
   const itemOf = (k) => parseInt(k, 10);
   const bfOnly = (k) => k.endsWith("b");
@@ -589,7 +722,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     for (const id of ["paneBf", "paneFl"]) $(id).style.transform = `scale(${sx}, ${sy})`;
     for (const n of card.querySelectorAll(".notes")) n.style.display = zoom === 1 ? "" : "none";   // arrows fit only 1x
     $("zoomReset").hidden = zoom === 1;
-    $("zoomReset").textContent = `${zoom.toFixed(1)}× · reset`;
+    $("zoomReset").textContent = t("{z}× · reset", { z: zoom.toFixed(1) });
   }
   function show(p) {
     pos = p;
@@ -601,7 +734,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     if (introduce(k)) return;
     paint({ k }); setNotes(null); judge(nDone() < JUDGE_N);
     const v = votes[k]?.v;
-    $("was").textContent = v ? `You said ${WORD[v]}. Pick again to change it.` : "";
+    $("was").textContent = v ? t("You said {v}. Pick again to change it.", { v: t(WORD[v]) }) : "";
     for (const w of ["keep", "toss", "unsure"]) $(w + "Btn").classList.toggle("on", v === w);
     $("was").classList.remove("look");
     for (let a = 1; a <= 3; a++) if (pos + a < N && cardAt(pos + a)) preload(sheetUrl(Math.floor((itemOf(cardAt(pos + a)) - 1) / PER_SHEET)));
@@ -627,8 +760,8 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   const JUDGE_N = 30;
   function judge(on) {
     card.classList.toggle("judge", on);
-    $("legBf").textContent = on ? "▲ Judge this one" : "Brightfield";
-    $("legFl").textContent = on ? "Fluorescence: a guide" : "Fluorescence";
+    $("legBf").textContent = on ? t("▲ Judge this one") : t("Brightfield");
+    $("legFl").textContent = on ? t("Fluorescence: a guide") : t("Fluorescence");
   }
 
   const nDone = () => Object.keys(votes).length;
@@ -665,7 +798,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     if (ok) { prac.streak++; if (prac.streak >= 3 && prac.level < 3) { prac.level++; prac.streak = 0; } }
     else { prac.streak = 0; if (miss) prac.level = Math.max(1, prac.level - 1); }
     local.set("prac", JSON.stringify(prac), true);
-    return extreme ? LOOK[pr.why] : null;
+    return extreme && LOOK[pr.why] ? t(LOOK[pr.why]) : null;
   }
   // Several easy ones missed lately: suggest a breather (at most once every 8 practice cards).
   function drifting() {
@@ -711,7 +844,8 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   // and two easy practice cells (k). The first two say what to do; the rest ask, then say why, and a wrong answer
   // gets another try. The score is how many were right on the first try, of those that ask. Nothing is saved. ----
   const TOUCH = matchMedia("(pointer: coarse)").matches;
-  const HOW = TOUCH ? { keep: "Swipe right", toss: "Swipe left", unsure: "Swipe up" } : { keep: "Press →", toss: "Press ←", unsure: "Press ↑" };
+  const HOW_ = TOUCH ? { keep: "Swipe right", toss: "Swipe left", unsure: "Swipe up" } : { keep: "Press →", toss: "Press ←", unsure: "Press ↑" };
+  const how = (v) => t(HOW_[v]);
   const TUT_ITEMS = [339, 476, 338];   // plain round keepers, so the first cells someone sees look like a normal cell
   const TUTORIAL = [
     { g: 0, single: true, v: "keep", told: true, notes: [[24, 37, 12, 20, "crisp edge"]],
@@ -764,7 +898,8 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   const nRight = () => coach.first.filter(Boolean).length;
   function coachStep() {
     const n = coach.cards.length;
-    $("coachStep").textContent = coach.kind === "tutorial" ? `Tutorial · ${coach.i + 1} of ${n}` : `Practice · ${coach.i + 1} of ${n} · ${nRight()} right`;
+    $("coachStep").textContent = coach.kind === "tutorial" ? t("Tutorial · {i} of {n}", { i: coach.i + 1, n })
+      : t("Practice · {i} of {n} · {r} right", { i: coach.i + 1, n, r: nRight() });
   }
   function coachShow() {
     const c = coach.cards[coach.i];
@@ -772,7 +907,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     $("labeller").classList.remove("result"); $("coachNext").hidden = true;
     paint(c); setNotes(c.told ? c.notes : null); judge(coach.kind === "tutorial" || nDone() < JUDGE_N); resetStamps();
     coachStep(); $("coachBar").style.width = (100 * coach.i / coach.cards.length) + "%";
-    $("coachText").textContent = c.ask; $("coachFb").hidden = true;
+    $("coachText").textContent = c.ask; $("coachFb").hidden = true;   // already in the page's language (startTutorial, startQuiz)
     for (const w of ["keep", "toss", "unsure"]) $(w + "Btn").classList.remove("on");
     $("was").textContent = ""; status("");
     shownAt = performance.now();
@@ -782,13 +917,13 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     if (coach.first[coach.i] === undefined) coach.first[coach.i] = ok;
     fb.hidden = false; fb.className = "fb " + (ok ? "ok" : "no");
     if (coach.kind === "tutorial" && !ok) {   // the same card again, with a pointer
-      fb.textContent = v === "unsure" ? "Not sure is for cells you really can't decide. This one has a clear answer: have another look."
-        : `Not quite. ${c.wrong || c.ask} Try again.`;
+      fb.textContent = v === "unsure" ? t("Not sure is for cells you really can't decide. This one has a clear answer: have another look.")
+        : t("Not quite. {why} Try again.", { why: c.wrong ? t(c.wrong) : c.ask });
       paint(c); setNotes(c.notes); shownAt = performance.now();
       return;
     }
-    fb.textContent = coach.kind === "tutorial" ? `Right! ${c.right}`
-      : `${ok ? "Right!" : "Not this time."} The lab's call: ${WORD[c.v]} (${REASON[c.why] || c.why}).`;
+    fb.textContent = coach.kind === "tutorial" ? t("Right! {why}", { why: t(c.right) })
+      : t("{verdict} The lab's call: {v} ({why}).", { verdict: ok ? t("Right!") : t("Not this time."), v: t(WORD[c.v]), why: REASON[c.why] ? t(REASON[c.why]) : c.why });
     coach.phase = "result"; coach.at = performance.now();
     paint(c); setNotes(c.notes);
     $(c.v === "keep" ? "stampKeep" : "stampToss").style.opacity = 1;
@@ -805,31 +940,31 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     const right = asked.filter((r) => r.ok).length;
     lastCoach = kind; stopCoach(); screen("coachEnd");
     $("ceScore").textContent = `${right} / ${asked.length}`;
-    $("ceAgain").querySelector(".lbl").textContent = kind === "tutorial" ? "Replay the tutorial" : "Practise again";
+    $("ceAgain").querySelector(".lbl").textContent = kind === "tutorial" ? t("Replay the tutorial") : t("Practise again");
     if (kind === "tutorial") {
       local.set("tutorial", "done");
-      $("ceKicker").textContent = "Tutorial";
-      $("ceTitle").textContent = right === asked.length ? "Perfect! You're ready." : "Tutorial done!";
-      $("ceScoreText").textContent = "right on the first try";
-      $("ceText").textContent = "Remember: judge the grey brightfield. Keep a single, whole cell that's sharp. Reject anything blurry, " +
-        `streaked, cut off, two cells, a bead or debris. Really can't decide? ${HOW.unsure} for not sure.`;
-      $("ceGo").querySelector(".lbl").textContent = nDone() ? "Back to labelling" : "Start labelling";
+      $("ceKicker").textContent = t("Tutorial");
+      $("ceTitle").textContent = right === asked.length ? t("Perfect! You're ready.") : t("Tutorial done!");
+      $("ceScoreText").textContent = t("right on the first try");
+      $("ceText").textContent = t("Remember: judge the grey brightfield. Keep a single, whole cell that's sharp. Reject anything blurry, " +
+        "streaked, cut off, two cells, a bead or debris. Really can't decide? {how} for not sure.", { how: how("unsure") });
+      $("ceGo").querySelector(".lbl").textContent = nDone() ? t("Back to labelling") : t("Start labelling");
     } else {
       const best = Math.max(right, Number(local.get("quiz_best", true)) || 0);
       local.set("quiz_best", String(best), true);
-      $("ceKicker").textContent = "Practice";
-      $("ceTitle").textContent = right >= 0.9 * asked.length ? "Sharp eye!" : "Practice done";
-      $("ceScoreText").textContent = "right. " + [1, 2, 3].map((lv) => {
+      $("ceKicker").textContent = t("Practice");
+      $("ceTitle").textContent = right >= 0.9 * asked.length ? t("Sharp eye!") : t("Practice done");
+      $("ceScoreText").textContent = t("right.") + " " + [1, 2, 3].map((lv) => {
         const g = asked.filter((r) => r.c.lv === lv);
-        return `${LEVEL[lv]} ${g.filter((r) => r.ok).length} of ${g.length}`;
-      }).join(" · ") + (best > right ? `. Your best: ${best}.` : ".");
-      $("ceText").textContent = "Hard ones are cells that careful labellers sometimes answer differently, so don't worry about those. " +
-        "Practice answers aren't saved as labels.";
-      $("ceGo").querySelector(".lbl").textContent = "Back to labelling";
+        return t("{level} {r} of {n}", { level: t(LEVEL[lv]), r: g.filter((r) => r.ok).length, n: g.length });
+      }).join(" · ") + (best > right ? ". " + t("Your best: {n}.", { n: best }) : ".");
+      $("ceText").textContent = t("Hard ones are cells that careful labellers sometimes answer differently, so don't worry about those. " +
+        "Practice answers aren't saved as labels.");
+      $("ceGo").querySelector(".lbl").textContent = t("Back to labelling");
     }
   }
   function startTutorial() {
-    startCoach("tutorial", TUTORIAL.map((c) => ({ ...c, ask: c.ask.replace("{keep}", HOW.keep).replace("{toss}", HOW.toss) })));
+    startCoach("tutorial", TUTORIAL.map((c) => ({ ...c, ask: t(c.ask).replace("{keep}", how("keep")).replace("{toss}", how("toss")) })));
   }
   function startQuiz() {
     if (!Object.keys(PRACTICE).length) return;
@@ -843,11 +978,11 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       }
       for (const i of shuffle(picked)) {
         const k = `${i}${ORIENTS[Math.floor(Math.random() * 4)]}${Math.random() < 0.5 ? "b" : ""}`;
-        cards.push({ k, v: PRACTICE[i].v, lv, why: PRACTICE[i].why, ask: `${LEVEL[lv]}.` + (lv === 3 ? " Careful labellers sometimes split on these." : "") });
+        cards.push({ k, v: PRACTICE[i].v, lv, why: PRACTICE[i].why, ask: `${t(LEVEL[lv])}.` + (lv === 3 ? " " + t("Careful labellers sometimes split on these.") : "") });
       }
     }
-    cards[0].ask = "Twenty cells the lab has already sorted, from easy to hard. After each one you'll see the lab's call. " +
-      "Practice answers aren't saved as labels. " + cards[0].ask;
+    cards[0].ask = t("Twenty cells the lab has already sorted, from easy to hard. After each one you'll see the lab's call. " +
+      "Practice answers aren't saved as labels.") + " " + cards[0].ask;
     local.set("quiz_seen", JSON.stringify(seen.concat(cards.map((c) => itemOf(c.k)))), true);
     startCoach("quiz", cards);
   }
@@ -930,29 +1065,52 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
          rules: "A small bud is part of the cell: keep it if it's sharp. Two cells stuck together, or a second lobe nearly as big as the first: reject. Blurry or cut off: reject, as before.",
          examples: [["Single cell, sharp", "keep"], ["Small bud: still one cell", "keep"], ["Two cells stuck together", "toss"], ["Out of focus", "toss"], ["Cut off at the edge", "toss"]] },
   };
+  // The study's facts are about cells in general (CD4 counts in HIV care, for example), not about the type on
+  // screen (Lucien, 2026-10-28); the lab page keeps its facts per type.
+  const CELL_FACTS = [
+    "Your body is made of roughly 30 trillion human cells.",
+    "Red blood cells are the most numerous cells in your body: about 25 trillion of them.",
+    "Doctors count CD4 T cells to follow HIV: the virus infects and destroys them, so the count shows how strong the immune system still is.",
+    "A mature red blood cell has no nucleus: it gives up its DNA to make room for haemoglobin, the protein that carries oxygen.",
+    "Each of your cells holds about two metres of DNA, folded into a nucleus about a hundredth of a millimetre wide.",
+    "Robert Hooke named cells in 1665, after the small rooms of a monastery, when he saw them in a slice of cork.",
+    "A flow cytometer measures thousands of cells per second as they stream one by one past a laser.",
+    "An imaging flow cytometer takes a picture of every cell as it flows by, like a camera at a finish line.",
+    "Blood types A, B and O are set by sugars on the surface of your red blood cells.",
+    "White blood cells can squeeze through the walls of blood vessels to reach an infection.",
+    "Some nerve cells are over a metre long: they run from the bottom of your spine to your toes.",
+    "The human egg is the largest cell in the body, about a tenth of a millimetre across: just big enough to see.",
+    "The lining of your gut renews itself every few days, so you replace billions of cells every day.",
+    "Platelets are fragments of giant bone-marrow cells, the megakaryocytes; each one sheds thousands of them.",
+    "Stem cells in your bone marrow make every kind of blood cell: red cells, white cells and platelets.",
+    "Some bacteria divide every 20 minutes; most human cells take about a day.",
+    "Healthy human cells have 46 chromosomes; cancer cells often have the wrong number.",
+    "Most human cells stop dividing after about 50 divisions; the ends of their chromosomes get shorter each time.",
+  ];
   // The next fact about a type: the introduction shows the first, breaks go on through the rest, round and round.
-  function nextFact(t) {
-    const shown = readJSON("facts", {}), n = shown[t] || 0, fs = KINDS[t].facts;
-    shown[t] = n + 1; local.set("facts", JSON.stringify(shown), true);
-    return fs[n % fs.length];
+  function nextFact(ty) {
+    if (STUDY) ty = "_";   // one list for every type
+    const shown = readJSON("facts", {}), n = shown[ty] || 0, fs = STUDY ? CELL_FACTS : KINDS[ty].facts;
+    shown[ty] = n + 1; local.set("facts", JSON.stringify(shown), true);
+    return t(fs[n % fs.length]);
   }
   let seenTypes = [];
   function introduce(k) {
-    const t = typeOf(k);
-    if (seenTypes.includes(t) || !KINDS[t]) return false;
-    seenTypes.push(t); local.set("types_seen", JSON.stringify(seenTypes), true);
-    const kind = KINDS[t], first = seenTypes.length === 1;
-    $("tKicker").textContent = first ? "Your first cells" : "New cells";
-    $("tTitle").textContent = first ? `Meet the ${kind.name}` : "Hey now, super swiper! Ready for a changeup?";
-    $("tAbout").textContent = (first ? "" : `Next up: ${kind.name}. `) + kind.about;
-    $("tFact").textContent = nextFact(t);
+    const ty = typeOf(k);
+    if (seenTypes.includes(ty) || !KINDS[ty]) return false;
+    seenTypes.push(ty); local.set("types_seen", JSON.stringify(seenTypes), true);
+    const kind = KINDS[ty], first = seenTypes.length === 1, kname = t(kind.name);
+    $("tKicker").textContent = first ? t("Your first cells") : t("New cells");
+    $("tTitle").textContent = first ? t("Meet the {name}", { name: kname }) : t("Hey now, super swiper! Ready for a changeup?");
+    $("tAbout").textContent = (first ? "" : t("Next up: {name}.", { name: kname }) + " ") + t(kind.about);
+    $("tFact").textContent = nextFact(ty);
     $("tRules").hidden = !kind.rules; $("tRules").textContent = kind.rules || "";
     const ex = $("tExamples"); ex.replaceChildren(); ex.hidden = !kind.examples;
     (kind.examples || []).forEach(([caption, v], r) => {
       const row = document.createElement("div"); row.className = "ex";
       const panes = document.createElement("div"); panes.className = "panes"; panes.setAttribute("role", "img"); panes.setAttribute("aria-label", caption);
       const [a, b] = [0, 1].map(() => { const p = document.createElement("div"); p.className = "pane"; const i = document.createElement("i"); p.append(i); panes.append(p); return i; });
-      cardPanes(a, b, `sheets/guide_${t}.png`, 2 * TILE + GAP, kind.examples.length * TILE, 0, r * TILE);
+      cardPanes(a, b, `sheets/guide_${ty}.png`, 2 * TILE + GAP, kind.examples.length * TILE, 0, r * TILE);
       const p = document.createElement("p");
       const chip = document.createElement("span"); chip.className = "chip " + v; chip.textContent = v === "keep" ? "Keep" : "Reject";
       const c = document.createElement("span"); c.textContent = caption;
@@ -976,11 +1134,12 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   let sending = false;
   function status(msg, warn) { $("status").textContent = msg; $("status").classList.toggle("warn", !!warn); }
   function queueSave(row) {
-    local.set("votes", JSON.stringify(votes), true); local.set("name", name);
-    if (row) { outbox.push(row); local.set("outbox", JSON.stringify(outbox), true); local.set("seq", String(seq), true); }
+    local.set("votes", JSON.stringify(votes), true);
+    if (!STUDY) local.set("name", name);
+    if (row && !LOCAL) { outbox.push(row); local.set("outbox", JSON.stringify(outbox), true); local.set("seq", String(seq), true); }
     flush();
   }
-  const toSend = () => signupOut || (member() && outbox.length);
+  const toSend = () => (STUDY ? !!consentId && outbox.length > 0 : signupOut || (member() && outbox.length));
   async function flush() {
     if (sending || !sb || !uid || refused || !toSend()) return;
     sending = true;
@@ -992,17 +1151,18 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       if (!error) {
         if (signup) { signupOut = null; local.set("signup_out", ""); local.set("signup_uid", uid); continue; }
         outbox.splice(0, batch.length); local.set("outbox", JSON.stringify(outbox), true);
-        status(outbox.length ? `Saving… ${outbox.length} to go` : "Saved.");
+        status(outbox.length ? t("Saving… {n} to go", { n: outbox.length }) : t("Saved."));
         continue;
       }
       if (/^(22|23|42)/.test(error.code || "")) {   // refused by the database's rules: retrying won't help
         refused = true;
         if (signup) $("welcomeStatus").textContent = "Your email couldn't be saved just now. Please try again later.";
         else if (await checkReleased()) break;
-        status("Your answers couldn't be saved online; they're kept on this device. Please tell Lucien.", true);
+        else if (STUDY && await consentGone()) break;   // withdrawn from another device
+        status(t("Your answers couldn't be saved online; they're kept on this device. Please tell Lucien."), true);
         break;
       }
-      status("Offline? Answers are kept on this device and will be sent when you're back.", true);
+      status(t("Offline? Answers are kept on this device and will be sent when you're back."), true);
       await new Promise((r) => { wake = r; setTimeout(r, 4000 + Math.random() * 2000); });
       wake = null;
     }
@@ -1012,14 +1172,16 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   window.addEventListener("online", () => (wake ? wake() : flush()));
 
   // ---- screens, answering, moving ----
-  function screen(id) { for (const s of ["welcome", "guide", "boardPage", "devicePage", "labeller", "done", "paused", "coachEnd"]) $(s).hidden = s !== id; }
+  const SCREENS = ["welcome", "consent", "codePage", "myData", "infoPage", "goodbye", "guide", "boardPage", "devicePage", "labeller", "done", "paused", "coachEnd"];
+  function screen(id) { for (const s of SCREENS) $(s).hidden = s !== id; }
   function answer(v, ms) {
     if (coach) { coachAnswer(v); return; }   // tutorial and practice answers are never saved
     const k = key(), old = votes[k], before = nDone();
     const prev = old ? [...(old.prev || []), { v: old.v, ms: old.ms, at: old.at }] : [];
     const at = new Date().toISOString();
     votes[k] = { v, ms: Math.round(ms), at, ...(prev.length ? { prev } : {}) };
-    queueSave({ id: crypto.randomUUID(), set_id: SET, name, card: k, answer: v, decide_ms: Math.round(ms), seq: ++seq, answered_at: at });
+    queueSave({ id: crypto.randomUUID(), set_id: SET, name, card: k, answer: v, decide_ms: Math.round(ms), seq: ++seq, answered_at: at,
+                ...(STUDY ? { consent_id: consentId, study_version: STUDY_VERSION } : {}) });
     if (!old && PRACTICE[itemOf(k)] && isSlot(DISPLAY[pos])) {
       const look = practiceAnswer(k, v);
       if (drifting()) { breather(); return; }
@@ -1039,18 +1201,23 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   function finish() {
     render(); screen("done");
     const inBonus = N > BASE.length;
-    $("doneText").textContent = `${name ? name + ", you" : "You"} answered all ${N} cards${inBonus ? ", bonus round included" : ""}. Your answers are saved.`;
+    $("doneText").textContent = STUDY
+      ? (LOCAL ? t("You answered all {n} cards. They stay on this device only.", { n: num(N) })
+               : inBonus ? t("You answered all {n} cards, bonus round included. Your answers are saved.", { n: num(N) })
+               : t("You answered all {n} cards. Your answers are saved.", { n: num(N) }))
+      : `${name ? name + ", you" : "You"} answered all ${N} cards${inBonus ? ", bonus round included" : ""}. Your answers are saved.`;
     // Every cell was shown twice: how often did both showings get the same answer? (the bonus round doesn't count)
     const totals = { keep: 0, toss: 0, unsure: 0 };
     for (const a of Object.values(votes)) totals[a.v]++;
     const pairs = Object.values(baseAnswers()).filter((ks) => ks.length === 2), same = pairs.filter(([a, b]) => votes[a].v === votes[b].v).length;
     $("consistPct").textContent = pairs.length ? `${Math.round(100 * same / pairs.length)}%` : "–";
-    $("consistText").textContent = `You gave the same answer both times for ${same} of ${pairs.length} cells.`;
-    $("totalsText").textContent = `Keep ${totals.keep} · Reject ${totals.toss} · Not sure ${totals.unsure}`;
-    drawAgree($("doneAgree"));
+    $("consistText").textContent = t("You gave the same answer both times for {same} of {n} cells.", { same, n: pairs.length });
+    $("totalsText").textContent = t("Keep {k} · Reject {r} · Not sure {u}", { k: totals.keep, r: totals.toss, u: totals.unsure });
+    if (STUDY) $("doneAgree").hidden = true;   // no agreement with others in the study
+    else drawAgree($("doneAgree"));
     const extra = inBonus ? [] : bonusCards();
     $("bonusBtn").hidden = $("bonusText").hidden = !extra.length;
-    $("bonusBtn").querySelector(".lbl").textContent = `Bonus round: ${extra.length / 2} cells you answered differently (${extra.length} cards)`;
+    $("bonusBtn").querySelector(".lbl").textContent = t("Bonus round: {c} cells you answered differently ({n} cards)", { c: extra.length / 2, n: extra.length });
   }
 
   // ---- bonus round: the cells someone answered differently on their two showings, twice more each ----
@@ -1104,7 +1271,8 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     const p = firstUnanswered(0);
     if (p === null) { finish(); return; }
     show(p);
-    if (!uid) status("Not connected yet: answers are kept on this device and sent once connected.", true);
+    if (LOCAL) status(t("Just for practice: nothing leaves this device."));
+    else if (!uid) status(t("Not connected yet: answers are kept on this device and sent once connected."), true);
   }
 
   // ---- leaderboard: everyone's count of answered cards (setup.sql okflow_board) ----
@@ -1115,29 +1283,36 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     "Tokyo", "Paris", "Lima", "Oslo", "Cairo", "Montreal", "Nairobi", "Lisbon", "Seoul", "Quito", "Dublin", "Perth"];
   const NOUN = ["Iguana", "Otter", "Falcon", "Panda", "Gecko", "Walrus", "Lynx", "Heron", "Koala", "Moose", "Octopus", "Badger",
     "Door", "Kettle", "Lantern", "Teapot", "Compass", "Bicycle", "Anchor", "Umbrella", "Trumpet", "Ladder", "Mirror", "Piano"];
+  // In French the same pair, noun first ("Loutre orange", "Porte de Tokyo"); the colours are ones that don't
+  // change with the noun's gender.
+  const ADJ_FR = ["orange", "turquoise", "cerise", "lilas", "ambre", "indigo", "olive", "corail", "d'argent", "d'or", "rubis", "jade",
+    "de Tokyo", "de Paris", "de Lima", "d'Oslo", "du Caire", "de Montréal", "de Nairobi", "de Lisbonne", "de Séoul", "de Quito", "de Dublin", "de Perth"];
+  const NOUN_FR = ["Iguane", "Loutre", "Faucon", "Panda", "Gecko", "Morse", "Lynx", "Héron", "Koala", "Orignal", "Pieuvre", "Blaireau",
+    "Porte", "Bouilloire", "Lanterne", "Théière", "Boussole", "Bicyclette", "Ancre", "Parapluie", "Trompette", "Échelle", "Miroir", "Piano"];
   function fakeName(handle) {
     let h = 2166136261;
     for (const ch of handle) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
-    return `${ADJ[h % ADJ.length]} ${NOUN[Math.floor(h / ADJ.length) % NOUN.length]}`;
+    const a = h % ADJ.length, n = Math.floor(h / ADJ.length) % NOUN.length;
+    return LANG === "fr" ? `${NOUN_FR[n]} ${ADJ_FR[a]}` : `${ADJ[a]} ${NOUN[n]}`;
   }
   async function loadBoard() {
     if (!sb || !uid) return;
     try {
       const { data, error } = await sb.rpc("okflow_board", { p_set: SET });
-      if (!error && Array.isArray(data)) boardRows = data.map((r, i) => ({ name: r.me ? "You" : fakeName(r.handle || String(i)), n: Number(r.cards) || 0, me: !!r.me }));
+      if (!error && Array.isArray(data)) boardRows = data.map((r, i) => ({ handle: r.handle || String(i), n: Number(r.cards) || 0, me: !!r.me }));
     } catch {}
   }
   function rankRows() {
-    const rows = boardRows.map((r) => ({ ...r }));
+    const rows = boardRows.map((r) => ({ ...r, name: r.me ? t("You") : fakeName(r.handle) }));
     let me = rows.find((r) => r.me);
     if (!me && nDone()) { me = { name, me: true }; rows.push(me); }
-    if (me) { me.n = nDone(); me.name = "You"; }   // this device is ahead of the server
+    if (me) { me.n = nDone(); me.name = t("You"); }   // this device is ahead of the server
     return rows.sort((a, b) => b.n - a.n);
   }
   function drawBoard() {
     const ol = $("board"); ol.replaceChildren();
     const rows = rankRows();
-    if (!rows.length) { const li = document.createElement("li"); li.textContent = "No one yet. Be the first!"; ol.append(li); return; }
+    if (!rows.length) { const li = document.createElement("li"); li.textContent = t("No one yet. Be the first!"); ol.append(li); return; }
     for (const r of rows) {
       const li = document.createElement("li"); if (r.me) li.className = "me";
       const who = document.createElement("span"); who.className = "who"; who.textContent = r.name;
@@ -1161,48 +1336,59 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   let returnTo = "labeller";
   function openBoard(from) { returnTo = from; drawBoard(); screen("boardPage"); loadBoard().then(() => { if (!$("boardPage").hidden) drawBoard(); }); }
 
-  // ---- switching device: a one-time code (setup.sql okflow_make_code / okflow_use_code) ----
-  // The new device keeps its own sign-in but is linked to the same person, so its answers count together.
+  // ---- switching device: a one-time code (setup.sql okflow_device_code / okflow_link_device) ----
+  // 12 letters and numbers, once, for 15 minutes. Using it only links this device: it keeps its own sign-in but
+  // counts as the same person, and the person's answers then come through okflow_sync.
   const rpc = async (fn, args) => { try { return await sb.rpc(fn, args); } catch (e) { return { error: e }; } };
+  const SITE = "okflow.weisslab.ca" + (STUDY ? "/?study" : "");
+  const codeText = (c) => c.match(/.{1,4}/g).join("-");
   $("deviceBtn").addEventListener("click", async () => {
     screen("devicePage");
-    $("codeOut").textContent = "…"; $("codeNote").textContent = "Works once, for 15 minutes.";
-    if (!sb || !uid) { $("codeOut").textContent = "Offline"; $("codeNote").textContent = "Connect to the internet to get a code."; return; }
+    $("deviceText").innerHTML = STUDY
+      ? t("On the other phone or computer, open <strong>{site}</strong>, tap <em>Enter your device code</em> and type this code. Your answers come with you. There you choose: <strong>move here</strong> (this device lets go: it forgets your answers and can't add more) or <strong>keep both</strong> (both stay yours and keep in step).", { site: SITE })
+      : `On the other phone or computer, open <strong>${SITE}</strong>, tap <em>Enter your code</em> under the name box and type this code. Your name and answers come with you and you carry on where you are. There you choose: <strong>move here</strong> (this device lets go: it forgets your answers and can't add more) or <strong>keep both</strong> (both stay yours and keep in step).`;
+    $("codeOut").textContent = "…"; $("codeNote").textContent = t("Works once, for 15 minutes.");
+    if (!sb || !uid) { $("codeOut").textContent = t("Offline"); $("codeNote").textContent = t("Connect to the internet to get a code."); return; }
     flush();
-    for (let t = 0; outbox.length && t < 20; t++) await new Promise((r) => setTimeout(r, 250));   // send waiting answers first
-    const { data, error } = await rpc("okflow_make_code", { p_set: SET });
-    if (error || typeof data !== "string") { $("codeOut").textContent = "No code"; $("codeNote").textContent = "Couldn't make a code just now. Try again in a moment."; return; }
-    $("codeOut").textContent = data.slice(0, 4) + "-" + data.slice(4);
+    for (let i = 0; outbox.length && i < 20; i++) await new Promise((r) => setTimeout(r, 250));   // send waiting answers first
+    const { data, error } = await rpc("okflow_device_code", { p_set: SET });
+    if (error || typeof data !== "string") { $("codeOut").textContent = t("No code"); $("codeNote").textContent = t("Couldn't make a code just now. Try again in a moment."); return; }
+    $("codeOut").textContent = codeText(data);
     const until = Date.now() + 15 * 60 * 1000;
     const poll = setInterval(async () => {
       if ($("devicePage").hidden || Date.now() > until || await checkReleased()) clearInterval(poll);
     }, 4000);
-    if (outbox.length) $("codeNote").textContent = `Works once, for 15 minutes. ${outbox.length} answers from this device haven't been sent yet, so they won't come with the code.`;
+    if (outbox.length) $("codeNote").textContent = t("Works once, for 15 minutes. {n} answers from this device haven't been sent yet, so they won't come with the code.", { n: outbox.length });
   });
   $("deviceBack").addEventListener("click", () => { screen("labeller"); show(pos); });
   $("haveCodeBtn").addEventListener("click", () => { $("codeForm").hidden = $("codeChoice").hidden = false; $("codeIn").focus(); });
   $("codeForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const say = (m) => { $("welcomeStatus").textContent = m; };
+    const say = (m) => { $(STUDY ? "consentStatus" : "welcomeStatus").textContent = m; };
     const code = $("codeIn").value.trim();
-    if (!/^[0-9a-f]{4}-?[0-9a-f]{4}$/i.test(code)) { say("A code is 8 letters and numbers, like ABCD-1234."); return; }
-    if (!SET || !sb || !uid) { say("Not connected yet. Check the internet connection and try again."); return; }
+    if (!/^[0-9a-z]{4}[-\s]?[0-9a-z]{4}[-\s]?[0-9a-z]{4}$/i.test(code)) { say(t("A code is 12 letters and numbers, like ABCD-EFGH-JKMN.")); return; }
+    if (STUDY && !uid) await connect();   // the study signs in only now, to be linked
+    if (!SET || !sb || !uid) { say(t("Not connected yet. Check the internet connection and try again.")); return; }
     $("codeGo").disabled = true;
     const move = document.querySelector('input[name="codeMode"]:checked')?.value !== "keep";
-    const { data, error } = await rpc("okflow_use_code", { p_code: code, p_set: SET, p_move: move });
-    $("codeGo").disabled = false;
-    if (error || !Array.isArray(data)) {
-      say(error?.code === "P0002" ? "That code didn't work. A code works once and for 15 minutes: make a new one on your other device."
-                                  : "Couldn't check the code just now. Try again in a moment.");
+    const { data, error } = await rpc("okflow_link_device", { p_code: code, p_set: SET, p_move: move });
+    if (error || data !== "linked") {
+      $("codeGo").disabled = false;
+      say(data === "unknown" ? t("That code didn't work. A code works once and for 15 minutes: make a new one on your other device.")
+        : data === "wait" ? t("Too many wrong codes. Wait 15 minutes, then make a new code on your other device.")
+        : t("Couldn't check the code just now. Try again in a moment."));
       return;
     }
-    for (const r of data) {
-      const at = new Date(r.answered_at).toISOString();
-      if (!votes[r.card] || votes[r.card].at < at) votes[r.card] = { v: r.answer, ms: r.decide_ms, at };
+    if (STUDY) {
+      const { data: cid } = await rpc("okflow_my_consent", { p_set: SET });
+      if (!cid) { $("codeGo").disabled = false; say(t("This device is linked, but no consent was found for it: the answers may have been deleted.")); return; }
+      setConsent(cid);
     }
-    if (data[0]?.name) { name = data[0].name; $("who").value = name; }
-    queueSave(); loadBoard();
+    await syncAnswers();
+    $("codeGo").disabled = false;
+    loadBoard();
     $("codeForm").hidden = $("codeChoice").hidden = true; $("codeIn").value = "";
+    if (STUDY) { say(""); welcomeBack(); screen("guide"); flush(); return; }
     say(`Welcome back${name ? ", " + name : ""}: your ${nDone()} answers are here. ` +
         (saysYes() ? "Enter your email and tap Next to continue." : "To continue, switch to Yes if you're a member of the Weiss Lab, enter your email and tap Next."));
     welcomeBack();
@@ -1213,6 +1399,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     if (!sb || !uid || !SET) return;
     const { data, error } = await rpc("okflow_sync", { p_set: SET });
     if (error || !Array.isArray(data) || !data.length) return;
+    if (!STUDY && !name && data[0].name) { name = data[0].name; $("who").value = name; local.set("name", name); }
     const was = !!votes[key()];
     let changed = 0;
     for (const r of data) {
@@ -1233,17 +1420,24 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     const { data, error } = await rpc("okflow_is_released", {});
     if (error || data !== true) return false;
     try { await sb.auth.signOut({ scope: "local" }); } catch {}
+    forgetDevice();
+    try { localStorage.setItem("okflow:moved", "1"); } catch {}
+    location.reload();
+    return true;
+  }
+  // What a device forgets when it is let go or withdraws: on the lab page, everything of the lab's; on the study
+  // page, only the study set's answers and its sign-in. The theme and language stay.
+  function forgetDevice() {
     try {
       const drop = [];
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if ((k.startsWith("okflow:") && k !== "okflow:theme") || k.startsWith("okflow-auth")) drop.push(k);
+        if (STUDY ? k.startsWith(`okflow:${SET}:`) || k === AUTH_KEY
+                  : (k.startsWith("okflow:") && k !== "okflow:theme" && k !== "okflow:lang" && !k.startsWith("okflow:okflow_study"))
+                    || (k.startsWith("okflow-auth") && !k.endsWith(":study"))) drop.push(k);
       }
       for (const k of drop) localStorage.removeItem(k);
-      localStorage.setItem("okflow:moved", "1");
     } catch {}
-    location.reload();
-    return true;
   }
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") checkReleased().then((gone) => { if (!gone) syncAnswers(); });
@@ -1251,14 +1445,14 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   $("boardBtn").addEventListener("click", () => openBoard("labeller"));
   $("doneBoard").addEventListener("click", () => openBoard("done"));
   $("boardBack").addEventListener("click", () => screen(returnTo));
-  $("boardBack").querySelector(".lbl").textContent = "Back";
+  $("boardBack").querySelector(".lbl").textContent = t("Back");
 
   // ---- milestone: every 50 cards, a 5-second break with cells flowing past ----
   let flowAnim = 0;
   const CONSIST_EVERY = 150, AGREE_AT = 1000;
   function milestone(d) {
     const cheer = CHEERS[(d / 50 - 1) % CHEERS.length];
-    $("mN").textContent = d; $("mTitle").textContent = cheer;
+    $("mN").textContent = d; $("mTitle").textContent = t(cheer);
     // one award per 50 cards so far, each its own, piling up one after another; a gold trophy every 500
     const aw = $("mAwards"); aw.replaceChildren();
     const tints = ["#0e8a6a", "#3f6fd8", "#8a6d1a", "#9a4fc4", "#c2513f"];
@@ -1267,7 +1461,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       b.className = "award" + (gold ? " gold" : "") + (m === d ? " new" : "");
       b.style.animationDelay = `${Math.min(i * 70, 1500)}ms`;
       if (!gold) b.style.background = tints[i % tints.length];
-      b.title = `${m} cards`;
+      b.title = t("{n} cards", { n: m });
       const icon = document.createElement("i"); icon.textContent = gold ? "🏆" : m === 1600 ? "👑" : AWARDS[(m / 50 - 1 - Math.floor(m / 500)) % AWARDS.length];
       const n = document.createElement("small"); n.textContent = m;
       b.append(icon, n); aw.append(b);
@@ -1283,16 +1477,17 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     }
     // the stats themselves are a reward: self-consistency every 150 cards, agreement with others from 1,000
     // (and both at the end), each saying in between how far off it is
-    const stats = d % CONSIST_EVERY === 0 || d === AGREE_AT;
+    const stats = d % CONSIST_EVERY === 0 || (d === AGREE_AT && !STUDY);
     $("mUnlocked").hidden = !stats;
     document.querySelector(".mbox").classList.toggle("unlock", stats);
     if (stats) drawConsist(hist, pairs.length, CONSIST_EVERY - d % CONSIST_EVERY);
     else {
-      const t = document.createElement("p"); t.className = "consist-head teaser";
-      t.textContent = `🔒 See your self-consistency in ${CONSIST_EVERY - d % CONSIST_EVERY} more cells`;
-      $("mConsist").replaceChildren(t);
+      const tease = document.createElement("p"); tease.className = "consist-head teaser";
+      tease.textContent = t("🔒 See your self-consistency in {n} more cells", { n: CONSIST_EVERY - d % CONSIST_EVERY });
+      $("mConsist").replaceChildren(tease);
     }
-    if (d < AGREE_AT) {
+    if (STUDY) $("mAgree").hidden = true;   // no agreement with others in the study
+    else if (d < AGREE_AT) {
       $("mAgree").hidden = false;
       $("mAgree").textContent = `🔒 At ${AGREE_AT.toLocaleString()} cells, see how your answers agree with others (${(AGREE_AT - d).toLocaleString()} to go)`;
     } else if (stats) drawAgree($("mAgree"));
@@ -1350,11 +1545,11 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     const box = $("mConsist"); box.replaceChildren();
     const head = document.createElement("p"); head.className = "consist-head";
     if (nPairs < 20 || !hist.length) {   // 20 cells answered on both showings, the least for a score
-      head.textContent = `Your self-consistency score appears every ${CONSIST_EVERY} images analyzed, once enough cells have come back a second time. Next check in ${left} images.`;
+      head.textContent = t("Your self-consistency score appears every {every} images analyzed, once enough cells have come back a second time. Next check in {left} images.", { every: CONSIST_EVERY, left });
       box.append(head); return;
     }
     const last = hist[hist.length - 1];
-    head.innerHTML = `<span class="score-label">Self-consistency</span> <b></b>`;
+    head.innerHTML = `<span class="score-label">${t("Self-consistency")}</span> <b></b>`;
     head.querySelector("b").textContent = `${last.pct}%`;
     // A line chart of the score over cards answered. The y axis fits the scores (whole 5% steps, at least 10% tall,
     // never past 0-100%), so small changes show; the x axis runs from the first saved score to now.
@@ -1366,18 +1561,18 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     const x = (d) => d1 > d0 ? L + (d - d0) * (W - L - P) / (d1 - d0) : L + (W - L - P) / 2;
     const y = (v) => P + (hi - v) * (H - P - B) / (hi - lo);
     const svg = document.createElementNS(ns, "svg"); svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-    svg.setAttribute("role", "img"); svg.setAttribute("aria-label", `Self-consistency by cards answered: ${hist.map((h) => `${h.pct}% at ${h.d}`).join(", ")}`);
+    svg.setAttribute("role", "img"); svg.setAttribute("aria-label", t("Self-consistency by cards answered: {list}", { list: hist.map((h) => `${h.pct}% @ ${h.d}`).join(", ") }));
     const el = (tag, attrs, text) => { const e = document.createElementNS(ns, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); if (text) e.textContent = text; svg.append(e); return e; };
     for (let v = lo, step = hi - lo <= 20 ? 5 : 10; v <= hi; v += step) {   // gridlines on round values, at most five
       el("line", { x1: L, x2: W - P, y1: y(v), y2: y(v), class: "grid" });
       el("text", { x: L - 5, y: y(v) + 3, "text-anchor": "end", class: "axis" }, `${v}%`);
     }
     for (const d of d1 > d0 ? [d0, d1] : [d1]) el("text", { x: x(d), y: H - B + 13, "text-anchor": d1 > d0 ? (d === d0 ? "start" : "end") : "middle", class: "axis" }, d.toLocaleString());
-    el("text", { x: L + (W - L - P) / 2, y: H - 2, "text-anchor": "middle", class: "axis" }, "cards answered");
+    el("text", { x: L + (W - L - P) / 2, y: H - 2, "text-anchor": "middle", class: "axis" }, t("cards answered"));
     if (hist.length > 1) el("polyline", { points: hist.map((h) => `${x(h.d)},${y(h.pct)}`).join(" "), class: "line" });
     hist.forEach((h, i) => el("circle", { cx: x(h.d), cy: y(h.pct), r: i === hist.length - 1 ? 5 : 3.5, class: i === hist.length - 1 ? "dot now" : "dot" }));
     const cap = document.createElement("p"); cap.className = "consist-cap";
-    cap.textContent = "Share of cells you answered the same way on both showings, measured every 50 cards. The filled dot is now.";
+    cap.textContent = t("Share of cells you answered the same way on both showings, measured every 50 cards. The filled dot is now.");
     box.append(head, svg, cap);
   }
   // Pausing needs no saving step: every answer is already saved as it's given.
@@ -1386,15 +1581,15 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   function breather() {
     const next = firstUnanswered(pos + 1);
     if (next !== null) pos = next;
-    screen("paused"); $("pausedTitle").textContent = "Time for a breather?";
-    $("pausedText").textContent = "You've been swiping for a while, and eyes get tired. " +
-      "Take a short break, or have another look at the examples, then carry on.";
+    screen("paused"); $("pausedTitle").textContent = t("Time for a breather?");
+    $("pausedText").textContent = t("You've been swiping for a while, and eyes get tired. " +
+      "Take a short break, or have another look at the examples, then carry on.");
   }
   function pauseNow() {
-    closeMilestone(); screen("paused"); $("pausedTitle").textContent = "Paused";
-    $("pausedText").textContent = `Your ${nDone()} answers are saved` +
-      (outbox.length ? ` on this device and will be sent once you're online` : "") +
-      `. You can close this page; it opens where you left off on this device.`;
+    closeMilestone(); screen("paused"); $("pausedTitle").textContent = t("Paused");
+    $("pausedText").textContent = (LOCAL ? t("Your {n} answers are kept on this device only.", { n: num(nDone()) })
+      : outbox.length ? t("Your {n} answers are saved on this device and will be sent once you're online.", { n: num(nDone()) })
+      : t("Your {n} answers are saved.", { n: num(nDone()) })) + " " + t("You can close this page; it opens where you left off on this device.");
     const board = () => drawMiniBoard($("pBoard"));
     board(); loadBoard().then(board);
   }
@@ -1505,8 +1700,9 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   $("backBtn").addEventListener("click", goBack);
   $("fwdBtn").addEventListener("click", goForward);
   $("reviewBtn").addEventListener("click", goBack);
-  $("guideBtn").addEventListener("click", () => { $("beginBtn").querySelector(".lbl").textContent = "Back to labelling"; $("guideTitle").textContent = "Instructions"; screen("guide"); });
-  $("pausedGuide").addEventListener("click", () => { $("beginBtn").querySelector(".lbl").textContent = "Back to labelling"; $("guideTitle").textContent = "Instructions"; screen("guide"); });
+  const openGuide = () => { $("beginBtn").querySelector(".lbl").textContent = t("Back to labelling"); $("beginBtn").dataset.back = "1"; $("guideTitle").textContent = t("Instructions"); screen("guide"); };
+  $("guideBtn").addEventListener("click", openGuide);
+  $("pausedGuide").addEventListener("click", openGuide);
   $("beginBtn").addEventListener("click", startLabelling);
   // ---- keyboard: every screen runs from the keys shown on its buttons, so a computer never needs the mouse ----
   const press = (id) => () => { const b = $(id); if (b && !b.hidden && !b.disabled) b.click(); };
@@ -1579,13 +1775,14 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     e.preventDefault();
     const email = $("email").value.trim(), yes = saysYes();
     if (!EMAIL.test(email)) {
-      $("welcomeStatus").textContent = yes ? "Enter your email to continue." : "Enter your email and we'll let you know when it goes live.";
+      $("welcomeStatus").textContent = email.includes("@") ? "That email address doesn't look right: use plain letters and numbers, like name@example.com."
+        : yes ? "Enter your email to continue." : "Enter your email and we'll let you know when it goes live.";
       $("email").focus(); return;
     }
     signUp(email, yes);
     if (!yes) { $("welcomeStatus").textContent = ""; thanked = true; gate(); return; }
     $("welcomeStatus").textContent = "";
-    name = $("who").value.trim();   // blank: anonymous
+    name = cleanName($("who").value); $("who").value = name;   // blank: anonymous
     local.set("name", name);
     if (!nDone() && !local.get("tutorial") && BASE.length) startTutorial();   // a first-timer learns by doing
     else screen("guide");
@@ -1598,12 +1795,15 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
   // stay saved; taking them out after the layout keeps every other card in the order each device already had.
   const SHOW_YEAST = false;
   const shown = (k) => SHOW_YEAST || typeOf(k) !== "y";
-  function layout(o) {
+  function deviceRnd() {   // random numbers from this device's own seed, the same on every visit
     let seed = Number(local.get("order_seed"));
     if (!seed) { seed = 1 + Math.floor(Math.random() * 2 ** 31); local.set("order_seed", String(seed)); }
     let s = seed >>> 0;
-    const rnd = () => { s = (s + 0x6d2b79f5) >>> 0; let x = Math.imul(s ^ (s >>> 15), 1 | s);   // mulberry32
+    return () => { s = (s + 0x6d2b79f5) >>> 0; let x = Math.imul(s ^ (s >>> 15), 1 | s);   // mulberry32
       x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
+  }
+  function layout(o) {
+    const rnd = deviceRnd();
     const cells = o.cells.slice();
     for (let a = o.warmup; a < cells.length; a += o.stretch) {
       const b = Math.min(a + o.stretch, cells.length);
@@ -1613,14 +1813,41 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     cells.forEach(([first, second, lag], p) => { placed.push([p, first]); placed.push([p + lag + 0.5, second]); });
     return placed.sort((x, y) => x[0] - y[0]).map(([, k]) => k);
   }
+  // The study's order (study.json): the warm-up, then stretches of cells, each shuffled for this device with every
+  // cell's first card before any second one, so both showings of a cell stay in its stretch. Stretches this device
+  // has started stay first, in order; the others go closest to ready first: the fewest more people needed for their
+  // cells to reach N (okflow_progress, as of this device's last visit), with finished stretches last.
+  function studyLayout(o) {
+    const rnd = deviceRnd(), prog = readJSON("progress", {});
+    const groups = [o.cells.slice(0, o.warmup)];
+    for (let a = o.warmup; a < o.cells.length; a += o.stretch) groups.push(o.cells.slice(a, a + o.stretch));
+    for (const g of groups.slice(1)) for (let i = g.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [g[i], g[j]] = [g[j], g[i]]; }
+    const need = (g) => g.reduce((n, [f]) => { const p = prog[itemOf(f)]; return n + (p?.[1] ? 0 : Math.max(0, MIN_PEOPLE - (p?.[0] || 0))); }, 0);
+    const rest = groups.slice(1).map((g, i) => ({ g, i, st: g.some(([f, s]) => votes[f] || votes[s]), n: need(g) }));
+    rest.sort((a, b) => (b.st - a.st) || (a.st ? a.i - b.i : ((a.n === 0) - (b.n === 0)) || (a.n - b.n) || (a.i - b.i)));
+    return [groups[0], ...rest.map((r) => r.g)].flatMap((g) => [...g.map((c) => c[0]), ...g.map((c) => c[1])]);
+  }
+  async function loadProgress() {   // used for the order on this device's next visit
+    const { data, error } = await rpc("okflow_progress", { p_set: SET });
+    if (error || !Array.isArray(data)) return;
+    const p = {};
+    for (const r of data) p[r.cell] = [r.people, r.done];
+    local.set("progress", JSON.stringify(p), true);
+  }
   if (local.get("moved")) {
     try { localStorage.removeItem("okflow:moved"); } catch {}
-    $("welcomeStatus").textContent = "You moved to another device, so this one has let go of your answers. Anyone can start afresh here.";
+    $(STUDY ? "consentStatus" : "welcomeStatus").textContent = STUDY
+      ? t("You moved to another device, so this one has let go of your answers. Anyone can start afresh here.")
+      : "You moved to another device, so this one has let go of your answers. Anyone can start afresh here.";
   }
-  fetch("cards.json").then((r) => r.json()).then((o) => {
+  fetch(STUDY ? "study.json" : "cards.json").then((r) => r.json()).then((o) => {
     SET = o.set_id; TYPES = o.types || ""; SHEET_V = o.sheet_v || {};
-    BASE = (o.cells ? layout(o) : o.display).filter(shown);
     votes = readJSON("votes", {}); outbox = readJSON("outbox", []); seq = Number(local.get("seq", true)) || 0;
+    if (STUDY) {
+      STUDY_VERSION = o.study_version; INFO_VERSION = o.info_version; MIN_PEOPLE = o.min_people || 5;
+      consentId = local.get("consent", true); LOCAL = local.get("local_only", true) === "1";
+    }
+    BASE = STUDY ? studyLayout(o) : (o.cells ? layout(o) : o.display).filter(shown);
     for (const [i, v, lv, why] of o.practice || []) { PRACTICE[i] = { v, lv, why }; LEVELS[lv].push(i); }
     slots = readJSON("slots", {}); prac = { ...prac, ...readJSON("prac", {}) };
     seenTypes = readJSON("types_seen", null) ?? [...new Set(Object.keys(votes).map(typeOf))];
@@ -1628,8 +1855,12 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     welcomeBack();
     $("beginBtn").disabled = false;
     if (BASE.length) preload(sheetUrl(Math.floor((itemOf(BASE[0]) - 1) / PER_SHEET)));
-    connect();
-  }).catch(() => { $("welcomeStatus").textContent = "Couldn't load the cell list. Reload the page to try again."; });
+    if (!STUDY) { connect(); return; }
+    // the study: no sign-in until someone has consented, and never in the under-18 mode
+    $("deviceItem").hidden = LOCAL;
+    if (consentId || LOCAL) screen("guide");
+    if (consentId) connect();
+  }).catch(() => { $(STUDY ? "consentStatus" : "welcomeStatus").textContent = t("Couldn't load the cell list. Reload the page to try again."); });
   preload("sheets/guide.png");
 
   // ---- returning on this device: say up front that nothing is lost, even though the instructions come again ----
@@ -1640,18 +1871,19 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     let last = -1;
     for (let p = N - 1; p >= 0; p--) if (votes[cardAt(p)]) { last = p; break; }
     const gap = next !== null && next < last ? DISPLAY.slice(0, last).filter((k) => !isSlot(k) && !votes[k]).length : 0;
-    const plan = next === null ? "You've answered every card."
-      : gap ? `New cells were added since you started, and they come first (${gap.toLocaleString()} cards). ` +
-              `Then you'll carry on where you left off, skipping every card you've already answered.`
-      : "You'll carry on where you left off.";
+    const plan = next === null ? t("You've answered every card.")
+      : gap ? t("New cells were added since you started, and they come first ({n} cards). " +
+                "Then you'll carry on where you left off, skipping every card you've already answered.", { n: num(gap) })
+      : t("You'll carry on where you left off.");
     $("welcomeBack").hidden = $("guideBack").hidden = !back;
     $("welcomeBack").textContent = `Welcome back${name ? ", " + name : ""}! Your ${d.toLocaleString()} answers are saved. ` +
       `You'll see the instructions again as a quick refresher. ${plan}`;
-    $("guideBack").textContent = `Just a refresher: your ${d.toLocaleString()} answers are saved. ${plan}`;
+    $("guideBack").textContent = (LOCAL ? t("Just a refresher: your {n} answers are kept on this device.", { n: num(d) })
+                                        : t("Just a refresher: your {n} answers are saved.", { n: num(d) })) + " " + plan;
     gate();
-    if ($("beginBtn").querySelector(".lbl").textContent !== "Back to labelling") {
-      $("beginBtn").querySelector(".lbl").textContent = back ? "Continue labelling" : "Start labelling";
-      $("guideTitle").textContent = back ? "Refresher before you continue" : "Instructions";
+    if (!$("beginBtn").dataset.back) {
+      $("beginBtn").querySelector(".lbl").textContent = back ? t("Continue labelling") : t("Start labelling");
+      $("guideTitle").textContent = back ? t("Refresher before you continue") : t("Instructions");
     }
   }
 
@@ -1673,7 +1905,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
     let doc;
     try { doc = JSON.parse(await f.text()); doc = doc.data || doc; } catch { doc = null; }
     if (!doc || doc.set !== SET || !doc.votes || typeof doc.votes !== "object") { say("That isn't an OKCell answers file for this set of cells."); return; }
-    name = ($("who").value.trim() || String(doc.name || "")).slice(0, 60); $("who").value = name;
+    name = cleanName($("who").value || doc.name); $("who").value = name;
     const cards = new Set(DISPLAY), rows = [];
     let n = 0;
     for (const [k, a] of Object.entries(doc.votes)) {
@@ -1696,16 +1928,220 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
           : "Those answers are already here. Tap Next to continue.");
   });
 
+  // ---- the study: the information sheet, consent, the deletion code, the optional email, withdrawal, the
+  // under-18 mode and the language (setup.sql: okflow_consent, okflow_withdraw and the rest of the study part) ----
+  // A draft until the ethics committee approves the final text; fr.js holds the French.
+  const INFO = {
+    en: `<p class="draft">Draft for review: this text will be replaced by the version the ethics committee approves.</p>
+<h3>Who we are</h3><p>OKFlow is a research project of the Weiss Lab at Polytechnique Montréal, led by Professor Lucien Weiss.</p>
+<h3>What the study is about</h3><p>Imaging flow cytometers photograph thousands of cells per second, and some of the pictures are blurry or cut off. We are building a set of cell images judged by many people, to test methods that find poor-quality images automatically. The study is about the images, not about you.</p>
+<h3>What you would do</h3><p>Look at pictures of cells and answer for each one: keep, reject or not sure. A one-minute tutorial comes first. You choose how long to take part: you can stop at any time and come back whenever you like.</p>
+<h3>Who can take part</h3><p>Adults (18 or older).</p>
+<h3>What we save</h3><p>Your answers (which picture, keep, reject or not sure), when you answered and how long each answer took, and a random identifier made by your browser. We don't ask for your name. As with any website, your device's internet address is seen by the services that host the page and the database (GitHub Pages, Cloudflare and Supabase); we don't store it with your answers.</p>
+<h3>Your email (optional)</h3><p>You can leave an email address to receive a plain-language summary at the end of the study and to be asked whether you would like to be acknowledged (you would give your name then). It is stored on its own, with nothing that links it to your answers, and deleted once those emails are sent.</p>
+<h3>Your deletion code</h3><p>After you agree, you get a private deletion code. With it, from any device, or from your own device without it, you can delete all your answers at any time. We keep only a scrambled version of the code, so we can't tell which answers are yours: if you lose both the code and your device, we can't delete your answers for you.</p>
+<h3>Risks and benefits</h3><p>There are no risks beyond those of using any website. There is no payment. You help build a resource for research, and you learn a little about cells.</p>
+<h3>Who sees the data</h3><p>The research team. A student researcher receives only summaries per cell image, never anyone's individual answers. Published results show labels and summaries per cell image, never anything about individual people.</p>
+<h3>Where and for how long</h3><p>In a database in Canada (Montréal), with an encrypted weekly backup on Polytechnique Montréal's storage; backups are replaced within 8 weeks. The data are kept for 7 years after the end of the study, then deleted.</p>
+<h3>Taking part is voluntary</h3><p>You can stop at any time without giving a reason, and delete your answers at any time. Results already published can't be changed, but your individual answers are still deleted.</p>
+<h3>Contact</h3><p>Lucien Weiss, Polytechnique Montréal: [email to be added]. Research ethics: [ethics committee contact to be added]. Ethics approval: [number and date to be added].</p>`,
+    fr: window.OKFLOW_INFO_FR || "",
+  };
+  function setConsent(id) { consentId = id; local.set("consent", id, true); }
+  // This person's consent is gone (withdrawn from another device, or with the deletion code): forget the study here.
+  async function consentGone() {
+    if (!sb || !uid || !consentId) return false;
+    const { data, error } = await rpc("okflow_my_consent", { p_set: SET });
+    if (error || data) return false;
+    await endStudy(t("Your contributions were deleted (from another device, or with your deletion code). Thank you for taking part."));
+    return true;
+  }
+  async function endStudy(msg) {
+    try { await sb?.auth.signOut({ scope: "local" }); } catch {}
+    forgetDevice();
+    consentId = null; uid = null; outbox = []; votes = {};
+    $("goodbyeText").textContent = msg;
+    stopCoach(); screen("goodbye");
+  }
+  $("againBtn").addEventListener("click", () => location.reload());
+  // what to show after consent (or the code page): the tutorial the first time, else the instructions
+  function enterLabelling() {
+    if (!nDone() && !local.get("tutorial") && BASE.length) startTutorial();
+    else { welcomeBack(); screen("guide"); }
+  }
+  function printThis(html) { $("printArea").innerHTML = html; window.print(); }
+  const printInfo = () => printThis(`<h1>OKFlow</h1>${INFO[LANG]}`);
+  $("printInfo").addEventListener("click", printInfo);
+  $("printInfo2").addEventListener("click", printInfo);
+
+  // consent: both boxes ticked, then a sign-in and the consent record, which returns the deletion code
+  const canAgree = () => { $("agreeBtn").disabled = !($("adultChk").checked && $("agreeChk").checked); };
+  $("adultChk").addEventListener("change", canAgree);
+  $("agreeChk").addEventListener("change", canAgree);
+  $("agreeBtn").addEventListener("click", async () => {
+    const say = (m) => { $("consentStatus").textContent = m; };
+    if (!SET) { say(t("Still loading. Try again in a moment.")); return; }
+    $("agreeBtn").disabled = true; say(t("Connecting…"));
+    if (!uid) await connect();
+    if (!sb || !uid) { say(t("Couldn't connect. Check the internet connection and try again.")); canAgree(); return; }
+    const { data, error } = await rpc("okflow_consent", { p_set: SET, p_info_version: INFO_VERSION, p_lang: LANG, p_adult: true });
+    const r = Array.isArray(data) ? data[0] : null;
+    if (error || !r?.consent_id) {
+      canAgree();
+      if (error?.code === "42501") { await endStudy(t("This device was let go or its answers were deleted, so it starts afresh as someone new.")); return; }
+      say(/outdated/.test(error?.message || "") ? t("The information sheet has changed. Reload the page to read the new one.")
+                                                : t("Couldn't record your consent just now. Try again in a moment."));
+      return;
+    }
+    say(""); setConsent(r.consent_id); flush(); loadBoard();
+    if (r.delete_code) showCode(r.delete_code, true); else enterLabelling();
+  });
+
+  // the deletion code: shown once (after consent, or "Get a new code"); only its hash is stored
+  let codeFirst = true;
+  function showCode(code, first) {
+    codeFirst = first;
+    $("codeTitle").textContent = first ? t("Your private deletion code") : t("Your new deletion code");
+    $("delCode").textContent = codeText(code);
+    $("savedChk").checked = false; $("codeNext").disabled = true;
+    $("codeNextLbl").textContent = !first ? t("Back") : local.get("tutorial") ? t("Next: see examples") : t("Next: a one-minute tutorial");
+    for (const id of ["delCopy", "delPrint", "delMail"]) $(id).textContent = t($(id).dataset.en || $(id).textContent);
+    $("codePage").insertBefore($("contactBox"), $("codeNext")); $("contactStatus").textContent = "";
+    screen("codePage");
+  }
+  $("savedChk").addEventListener("change", () => { $("codeNext").disabled = !$("savedChk").checked; });
+  $("delCopy").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText($("delCode").textContent); $("delCopy").textContent = t("Copied"); }
+    catch { $("delCopy").textContent = t("Couldn't copy: write it down"); }
+  });
+  $("delPrint").addEventListener("click", () => printThis(`<h1>OKFlow</h1><p>${t("Your private deletion code")}</p><p class="code">${$("delCode").textContent}</p>` +
+    `<p>${t("With this code you can delete all your answers to the OKFlow study at any time, from any device: open {site} and choose “Use your deletion code”.", { site: "okflow.weisslab.ca/?study" })}</p>`));
+  $("delMail").addEventListener("click", () => {
+    location.href = "mailto:?subject=" + encodeURIComponent(t("My OKFlow deletion code")) + "&body=" + encodeURIComponent(
+      t("My OKFlow deletion code: {code}\n\nWith it I can delete all my answers to the OKFlow study at any time, from any device: open {site} and choose “Use your deletion code”.",
+        { code: $("delCode").textContent, site: "https://okflow.weisslab.ca/?study" }));
+  });
+  $("codeNext").addEventListener("click", () => { if (codeFirst) enterLabelling(); else openMyData(); });
+
+  // the optional email, kept apart from everything else: add or remove an address, never read one back
+  async function contact(fn) {
+    const email = $("contactIn").value.trim(), say = (m) => { $("contactStatus").textContent = m; };
+    if (!EMAIL.test(email)) { say(email.includes("@") ? t("That email address doesn't look right: use plain letters and numbers, like name@example.com.") : t("Enter an email address first.")); return; }
+    if (!ensureClient()) { say(t("Couldn't connect. Check the internet connection and try again.")); return; }
+    const { error } = await rpc(fn, { p_email: email });
+    if (error) { say(t("Couldn't do that just now. Try again in a moment.")); return; }
+    $("contactIn").value = "";
+    say(fn === "okflow_add_contact" ? t("Added. We'll write once, when the study ends.") : t("Removed, if it was on the list."));
+  }
+  $("contactForm").addEventListener("submit", (e) => { e.preventDefault(); contact("okflow_add_contact"); });
+  $("contactRemove").addEventListener("click", () => contact("okflow_remove_contact"));
+
+  // "Use your deletion code", on any device, with no sign-in: the code, then a second tap to confirm
+  $("delCodeBtn").addEventListener("click", () => { $("delForm").hidden = false; $("delIn").focus(); });
+  $("delForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!/^[0-9a-z]{4}([-\s]?[0-9a-z]{4}){3}$/i.test($("delIn").value.trim())) { $("consentStatus").textContent = t("A deletion code is 16 letters and numbers, like ABCD-EFGH-JKMN-PQRS."); return; }
+    $("consentStatus").textContent = ""; $("delYes").hidden = false; $("delYes").focus();
+  });
+  $("delIn").addEventListener("input", () => { $("delYes").hidden = true; });
+  $("delYes").addEventListener("click", async () => {
+    const say = (m) => { $("consentStatus").textContent = m; };
+    if (!ensureClient()) { say(t("Couldn't connect. Check the internet connection and try again.")); return; }
+    $("delYes").disabled = true;
+    const { data, error } = await rpc("okflow_withdraw", { p_code: $("delIn").value.trim() });
+    $("delYes").disabled = false; $("delYes").hidden = true;
+    if (error) { say(error.code === "P0002" ? t("That code didn't match. Check it and try again.") : t("Couldn't delete just now. Try again in a moment.")); return; }
+    $("delIn").value = ""; $("delForm").hidden = true;
+    if (consentId && await consentGone()) return;   // it was this device's own
+    say(t("Done: {n} answers were deleted, and that code no longer works.", { n: num(data) }));
+  });
+
+  // "my data": a new code, deleting everything, the email; in the under-18 mode, how to take part instead
+  function openMyData() {
+    $("myDataLocal").hidden = !LOCAL; $("myDataCode").hidden = $("myDataDelete").hidden = LOCAL;
+    $("myDataText").textContent = LOCAL ? t("You've answered {n} cards on this device.", { n: num(nDone()) })
+      : t("You've answered {n} cards. They're saved for the study under a random identifier, never your name.", { n: num(nDone()) });
+    $("withdrawYes").hidden = true; $("myDataStatus").textContent = ""; $("contactStatus").textContent = "";
+    $("contactBox").hidden = LOCAL;
+    $("myData").insertBefore($("contactBox"), $("readInfo").parentElement);
+    screen("myData");
+  }
+  $("myDataBtn").addEventListener("click", openMyData);
+  $("myDataBack").addEventListener("click", () => { screen("labeller"); show(pos); });
+  $("readInfo").addEventListener("click", () => screen("infoPage"));
+  $("infoBack").addEventListener("click", openMyData);
+  $("newCodeBtn").addEventListener("click", async () => {
+    const say = (m) => { $("myDataStatus").textContent = m; };
+    if (!sb || !uid) { say(t("Connect to the internet to get a new code.")); return; }
+    const { data, error } = await rpc("okflow_new_delete_code", {});
+    if (error || typeof data !== "string") { say(t("Couldn't make a code just now. Try again in a moment.")); return; }
+    showCode(data, false);
+  });
+  $("withdrawBtn").addEventListener("click", () => { $("withdrawYes").hidden = false; $("withdrawYes").focus(); });
+  $("withdrawYes").addEventListener("click", async () => {
+    const say = (m) => { $("myDataStatus").textContent = m; };
+    if (!sb || !uid) { say(t("Connect to the internet to delete your contributions.")); return; }
+    $("withdrawYes").disabled = true;
+    const { data, error } = await rpc("okflow_withdraw", {});
+    $("withdrawYes").disabled = false;
+    if (error) { say(t("Couldn't delete just now. Try again in a moment.")); return; }
+    await endStudy(t("{n} answers were deleted from the study, on every device linked to you. Thank you for taking part.", { n: num(data) }));
+  });
+
+  // under 18: OKFlow just for practice, nothing sent anywhere; "take part instead" forgets it and starts over
+  $("localBtn").addEventListener("click", () => {
+    if (!SET) return;
+    LOCAL = true; local.set("local_only", "1", true); $("deviceItem").hidden = true;
+    enterLabelling();
+  });
+  $("leaveLocal").addEventListener("click", () => { forgetDevice(); location.reload(); });
+
+  // the language: English or French, from the browser at first, switched on the launch screen or from the menu
+  function applyLang(l) {
+    LANG = l === "fr" ? "fr" : "en";
+    local.set("lang", LANG);
+    document.documentElement.lang = LANG;
+    for (const el of document.querySelectorAll("[data-t]")) { el.dataset.en ??= el.innerHTML.trim(); el.innerHTML = t(el.dataset.en); }
+    for (const b of document.querySelectorAll("#langs button")) b.setAttribute("aria-pressed", String(b.dataset.lang === LANG));
+    $("langBtn").textContent = LANG === "fr" ? "English" : "français";
+    $("infoSheet").innerHTML = $("infoSheet2").innerHTML = INFO[LANG] || INFO.en;
+    dark = applyTheme(local.get("theme"));
+    drawExamples(); judge(card.classList.contains("judge"));
+    $("boardBack").querySelector(".lbl").textContent = t("Back");
+    $("beginBtn").querySelector(".lbl").textContent = $("beginBtn").dataset.back ? t("Back to labelling") : t("Start labelling");
+    if (SET) welcomeBack();
+  }
+  if (STUDY) {
+    $("consent").prepend(document.querySelector("#welcome .brandrow"));   // the logo, the languages and the theme
+    $("langs").hidden = false; $("studyItems").hidden = false;
+    $("codeIn").placeholder = "ABCD-EFGH-JKMN"; $("codeIn").maxLength = 14;
+    $("studyCodeRow").after($("codeForm"), $("codeChoice"));
+    $("studyCodeBtn").addEventListener("click", () => { $("codeForm").hidden = $("codeChoice").hidden = false; $("codeIn").focus(); });
+    for (const b of document.querySelectorAll("#langs button")) b.addEventListener("click", () => applyLang(b.dataset.lang));
+    $("langBtn").addEventListener("click", () => applyLang(LANG === "fr" ? "en" : "fr"));
+    applyLang(local.get("lang") || ((navigator.language || "").toLowerCase().startsWith("fr") ? "fr" : "en"));
+    screen("consent");
+  } else {
+    $("codeIn").placeholder = "ABCD-EFGH-JKMN"; $("codeIn").maxLength = 14;
+  }
+
   // ---- connect to Supabase (config.js) with an anonymous sign-in kept on this device ----
-  let connectWait = 5000;
-  async function connect() {
+  // The client alone, with no sign-in: enough for a deletion code or the summary email.
+  function ensureClient() {
     const cfg = window.OKFLOW || {};
-    if (!cfg.supabaseUrl || !cfg.supabaseKey || !window.supabase) {
-      $("welcomeStatus").textContent = "Not connected to the answer store: answers stay on this device.";
+    if (!sb && !LOCAL && cfg.supabaseUrl && cfg.supabaseKey && window.supabase)
+      sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, { auth: { storageKey: AUTH_KEY, persistSession: true, autoRefreshToken: true } });
+    return sb;
+  }
+  let connectWait = 5000, connecting = null;
+  function connect() { return (connecting ||= connectOnce().finally(() => { connecting = null; })); }
+  async function connectOnce() {
+    if (LOCAL) return;   // the under-18 mode never contacts the database
+    if (!ensureClient()) {
+      $(STUDY ? "consentStatus" : "welcomeStatus").textContent = t("Not connected to the answer store: answers stay on this device.");
       return;
     }
     try {
-      sb = sb || window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, { auth: { storageKey: AUTH_KEY, persistSession: true, autoRefreshToken: true } });
       let { data: { session } } = await sb.auth.getSession();
       if (!session) {
         const { data, error } = await sb.auth.signInAnonymously();
@@ -1714,10 +2150,11 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       }
       uid = session.user.id;
       if (await checkReleased()) return;
+      if (STUDY && await consentGone()) return;
       // a member's device that is new to this project (or signed up before signups were kept per sign-in)
       // says again that it's a member, so the database takes its answers
       const email = local.get("email");
-      if (member() && email && !signupOut && local.get("signup_uid") !== uid) {
+      if (!STUDY && member() && email && !signupOut && local.get("signup_uid") !== uid) {
         signupOut = { id: crypto.randomUUID(), email, member: true, previous_labeller: previousId };
         local.set("signup_out", JSON.stringify(signupOut));
       }
@@ -1726,7 +2163,8 @@ kbd { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75
       setTimeout(connect, connectWait); connectWait = Math.min(60000, connectWait * 2);
       return;
     }
-    if (!$("labeller").hidden) status(outbox.length ? "" : "Connected.");
+    if (STUDY) loadProgress();
+    if (!$("labeller").hidden) status(outbox.length ? "" : t("Connected."));
     flush(); loadBoard(); syncAnswers();
   }
 })();
